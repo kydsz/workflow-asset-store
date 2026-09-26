@@ -1,0 +1,22 @@
+{
+  "name": "workflow-asset-store",
+  "version": "0.0.0",
+  "private": true,
+  "description": "AI 工作流资产库：为 AI 生成的图片/视频记录可溯源的生成配方与生成记录",
+  "license": "MIT",
+  "packageManager": "pnpm@11.7.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @was/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  }
+}

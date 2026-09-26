@@ -1,0 +1,7 @@
+{
+  "name": "@was/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "commander CLI：批量扫描目录入库、导出、校验断链"
+}

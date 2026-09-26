@@ -1,0 +1,489 @@
+import type { ErrorCode, NeedsManualCode } from '@was/core';
+
+export type Locale = 'zh' | 'en';
+
+export const LOCALE_STORAGE_KEY = 'was-locale';
+export const LOCALE_COOKIE = 'was-locale';
+export const DEFAULT_LOCALE: Locale = 'zh';
+
+export const BCP47: Record<Locale, string> = { zh: 'zh-CN', en: 'en-US' };
+
+export interface Translate {
+  (key: TKey, n?: string | number): string;
+  locale: Locale;
+  time: (ms: number) => string;
+}
+
+export const zh = {
+  'nav.records': '生成记录',
+  'nav.recipes': '生成配方',
+  'nav.incomplete': '待补录',
+  'nav.brand': 'Asset Store',
+  'nav.tagline': '本地自托管 · SQLite',
+  'nav.dragHint': '提示：把文件直接拖到页面任意位置即可入库',
+
+  'common.count': '{n} 条',
+  'common.search': '搜索',
+  'common.all': '全部',
+  'common.none': '无',
+  'common.noPrompt': '（无提示词）',
+  'common.needsManual': '待补录',
+  'common.usedTimes': '{n} 次',
+  'common.exportWithParams': '带参导出',
+  'common.exportWithParamsHint': '注入本次提示词/seed 后下载',
+  'common.save': '保存',
+  'common.saving': '保存中…',
+  'common.optional': '（选填）',
+  'common.tool': '生成工具',
+  'common.prompt': '提示词',
+  'common.recipe': '配方',
+  'common.mediaType': '媒体类型',
+  'common.note': '备注',
+  'common.viewRecord': '查看记录',
+
+  'kind.workflow-file': '工作流文件',
+  'kind.param-preset': '参数预设',
+  'kind.prompt-template': '提示词模板',
+
+  'gallery.emptyTitle': '还没有生成记录',
+  'gallery.emptyDesc': '点左上角「上传入库」，或把 ComfyUI 导出的 PNG/JSON 直接拖到页面上。',
+  'gallery.artifacts': '{n} 产物',
+  'gallery.needsManualCount': '待补录 {n}',
+
+  'filter.searchPlaceholder': '搜索提示词 / 备注 / 配方名 / 参数，回车生效',
+  'filter.allTools': '全部工具',
+  'filter.allMedia': '全部媒体',
+  'filter.image': '图片',
+  'filter.video': '视频',
+  'filter.recipeAny': '有无配方不限',
+  'filter.recipeYes': '有配方',
+  'filter.recipeNo': '无配方',
+  'filter.manualAny': '补录状态不限',
+  'filter.manualPending': '待补录',
+  'filter.manualComplete': '已完整',
+  'filter.clear': '清除筛选',
+
+  'incomplete.title': '待补录队列',
+  'incomplete.subtitle': '自动解析拿不到的字段会进到这里；补完或忽略后标记清除。',
+  'incomplete.emptyTitle': '队列已清空',
+  'incomplete.emptyDesc': '没有需要手动补录的记录',
+  'incomplete.recordFallback': '记录 {n}',
+
+  'recipes.searchPlaceholder': '搜索配方名 / 内容',
+  'recipes.emptyTitle': '暂无配方',
+  'recipes.emptyDesc': '点右上角「新建配方」先建档（工作流文件可后补）；入库 ComfyUI 文件也会自动建档。',
+  'recipes.awaitingFile': '待补文件',
+  'recipes.usedCount': '已使用 {n} 次',
+  'recipes.new': '新建配方',
+
+  'recipe.back': '返回配方列表',
+  'recipe.noTool': '未标注工具',
+  'recipe.awaitingFileBadge': '工作流文件待补挂',
+  'recipe.downloadWorkflow': '下载工作流 JSON',
+  'recipe.attachCard': '补挂工作流文件',
+  'recipe.replaceCard': '替换工作流文件',
+  'recipe.workflowJson': '工作流 JSON',
+  'recipe.workflowPreviewHint': '截断预览，下载见完整文件',
+  'recipe.history': '历次生成（{n}）',
+  'recipe.historyEmpty': '纯收藏：尚无生成记录 —— 合法状态。',
+  'recipe.info': '信息',
+  'recipe.usage': '使用统计',
+  'recipe.lastUsed': '· 最近 {n}',
+  'recipe.contentHash': '内容哈希',
+  'recipe.promptTemplate': '提示词模板',
+  'recipe.params': '参数预设',
+  'recipe.createdAt': '创建时间',
+
+  'record.back': '返回生成记录',
+  'record.preview': '产物预览',
+  'record.noImagePreview': '工作流 / 数据文件，无图像预览',
+  'record.downloadFile': '下载文件',
+  'record.noArtifactTitle': '无产物文件',
+  'record.noArtifactDesc': '手动补录的记录可以先只填元信息，之后再挂文件。',
+  'record.provenance': '溯源',
+  'record.recipeLabel': '配方：',
+  'record.noRecipe': '无配方',
+  'record.createdAt': '生成时间',
+  'record.noPromptValue': '（无）',
+  'record.ingestSource': '入库方式',
+  'record.ingestManual': '手动补录',
+  'record.owner': '归属人',
+  'record.paramsThisRun': '当次参数',
+  'record.files': '文件区（{n}）',
+  'record.noFiles': '暂无产物文件',
+  'record.videoIndex': '视频 #{n}',
+  'record.imageIndex': '图片 #{n}',
+  'record.storageCopy': '复制入库',
+  'record.storageRef': '引用原路径',
+  'record.needsSection': '待补录（{n}）',
+  'record.edit': '编辑 / 补录',
+  'record.needsFields': '待补录字段：',
+  'record.resolvedSuffix': '已补/忽略',
+
+  'upload.title': '上传入库',
+  'upload.dialogTitle': '入库',
+  'upload.dialogDesc': '自动解析 ComfyUI 元数据；解析不到的字段进待补录队列',
+  'upload.tabFiles': '文件上传',
+  'upload.tabManual': '手动补录',
+  'upload.dropHint': '拖入文件或点击选择（ComfyUI 导出的 PNG/JSON、图片、视频）',
+  'upload.dropSub': '可多选；同一次运行的多输出会合并为一条记录',
+  'upload.removeFile': '移除',
+  'upload.linkRecipe': '关联已有配方',
+  'upload.noLinkAuto': '不关联（自动解析）',
+  'upload.noLink': '不关联',
+  'upload.toolPlaceholder': 'comfyui',
+  'upload.promptOverride': '提示词覆盖',
+  'upload.promptOverridePlaceholder': '解析不到时用这条',
+  'upload.submit': '入库',
+  'upload.submitting': '入库中…',
+  'upload.fileCount': '{n} 个文件',
+  'upload.manualToolPlaceholder': 'kling / runway',
+  'upload.manualPrompt': '提示词',
+  'upload.manualNote': '备注',
+  'upload.paths': '本机文件路径（每行一个，引用模式不挪文件）',
+
+  'attach.hint': '拖入或选择 ComfyUI 导出的工作流 JSON（规范化后内容寻址落库）',
+  'attach.choose': '选择文件',
+  'attach.uploading': '上传中…',
+  'attach.done': '已补挂工作流文件',
+
+  'recipeForm.name': '名称',
+  'recipeForm.namePlaceholder': '如：写实人像 SDXL 工作流',
+  'recipeForm.kind': '形态',
+  'recipeForm.kindWorkflow': '工作流文件（可后补）',
+  'recipeForm.kindPrompt': '提示词模板',
+  'recipeForm.kindParams': '参数预设',
+  'recipeForm.tool': '适用工具',
+  'recipeForm.toolPlaceholder': 'comfyui / kling',
+  'recipeForm.paramsJson': '参数 JSON',
+  'recipeForm.workflowFile': '工作流 JSON（可选，创建时直接导入）',
+  'recipeForm.desc': '工作流文件形态可先建档，文件与关联资产随后再补',
+  'recipeForm.create': '创建',
+  'recipeForm.creating': '创建中…',
+  'recipeForm.created': '配方已创建',
+
+  'dup.duplicate': '复制为新草稿',
+  'dup.copy': '复制',
+  'dup.export': '导出',
+  'dup.exportTitle': '下载工作流 JSON',
+  'dup.duplicated': '已复制为新草稿',
+  'dup.failed': '复制失败',
+
+  'dropzone.title': '松手即入库',
+  'dropzone.busy': '入库中…',
+  'dropzone.hint': 'ComfyUI PNG/JSON 会自动解析提示词与工作流',
+
+  'theme.toLight': '切换到白天模式',
+  'theme.toDark': '切换到夜间模式',
+  'lang.toggleTitle': '切换到 English',
+
+  'action.errToolAndPaths': '生成工具与文件路径必填',
+  'action.errRecordMissing': '保存失败：记录不存在',
+  'action.errRecipeName': '配方需要名称',
+  'action.errParamsJson': '参数预设需为合法 JSON，如 {"steps": 30}',
+  'action.errChooseWorkflow': '请选择工作流文件（JSON）',
+
+  'toast.noFiles': '还没有选择文件',
+  'toast.ingesting': '正在入库 {n} 个文件…',
+  'toast.ingested': '已入库 {n} 条记录',
+  'toast.skippedDup': '跳过重复 {n} 个',
+  'toast.join': '，',
+  'toast.ingestFailed': '入库失败：{n}',
+  'toast.saveFailed': '保存失败：{n}',
+  'toast.saved': '已保存',
+  'toast.createdView': '已创建记录 · 查看',
+
+  'reason.tool_not_detected': '未识别到生成工具',
+  'reason.prompt_not_parsed': '未解析到提示词',
+  'reason.workflow_metadata_absent': '文件不含可解析的工作流元数据，需手动关联或补录',
+  'reason.workflow_content_not_parsed': '未解析到工作流内容',
+  'reason.media_type_ambiguous': 'MVP 仅支持 image/video，需人工确认媒体类型',
+
+  'err.unknown': '操作失败',
+  'err.recipe_kind_unknown': '未知的配方形态',
+  'err.recipe_name_required': '配方必须有名称',
+  'err.recipe_content_missing': '配方缺少必填内容',
+  'err.recipe_not_found': '配方不存在',
+  'err.recipe_template_conflict': '该配方已挂其他工作流模板，与新内容不一致',
+  'err.record_tool_required': '生成记录必须标注生成工具',
+  'err.record_artifacts_required': '生成记录至少需要一个产物',
+  'err.artifact_path_required': '产物缺少文件路径',
+  'err.artifact_media_type_unsupported': '产物媒体类型仅支持图片/视频',
+  'err.prompt_must_be_text': '提示词必须是文本',
+  'err.record_not_found': '生成记录不存在',
+  'err.file_not_found': '文件不存在',
+  'err.workflow_kind_mismatch': '只有工作流文件配方可补挂文件，其余形态请用文本内容',
+  'err.workflow_json_invalid': '工作流文件需为合法 JSON',
+
+  'meta.title': 'Workflow Asset Store',
+  'meta.description': 'AI 生成产物的溯源资产库',
+} as const;
+
+export type TKey = keyof typeof zh;
+
+export type Dict = { [K in TKey]: string };
+
+export type MakeT = (locale: Locale) => Translate;
+
+export const en: Dict = {
+  'nav.records': 'Generation Records',
+  'nav.recipes': 'Recipes',
+  'nav.incomplete': 'Needs Review',
+  'nav.brand': 'Asset Store',
+  'nav.tagline': 'Self-hosted · SQLite',
+  'nav.dragHint': 'Tip: drop files anywhere on the page to ingest them',
+
+  'common.count': '{n} item{s}',
+  'common.search': 'Search',
+  'common.all': 'All',
+  'common.none': 'None',
+  'common.noPrompt': '(no prompt)',
+  'common.needsManual': 'Needs review',
+  'common.usedTimes': 'used {n} time{s}',
+  'common.exportWithParams': 'Export with params',
+  'common.exportWithParamsHint': 'Downloads this run’s prompt/seed injected',
+  'common.save': 'Save',
+  'common.saving': 'Saving…',
+  'common.optional': '(optional)',
+  'common.tool': 'Tool',
+  'common.prompt': 'Prompt',
+  'common.recipe': 'Recipe',
+  'common.mediaType': 'Media type',
+  'common.note': 'Note',
+  'common.viewRecord': 'View record',
+
+  'kind.workflow-file': 'Workflow file',
+  'kind.param-preset': 'Param preset',
+  'kind.prompt-template': 'Prompt template',
+
+  'gallery.emptyTitle': 'No generation records yet',
+  'gallery.emptyDesc': 'Click “Upload” top-left, or drop ComfyUI PNG/JSON exports anywhere on the page.',
+  'gallery.artifacts': '{n} artifact{s}',
+  'gallery.needsManualCount': 'Needs review {n}',
+
+  'filter.searchPlaceholder': 'Search prompt / note / recipe / params — Enter to apply',
+  'filter.allTools': 'All tools',
+  'filter.allMedia': 'All media',
+  'filter.image': 'Image',
+  'filter.video': 'Video',
+  'filter.recipeAny': 'Any recipe state',
+  'filter.recipeYes': 'With recipe',
+  'filter.recipeNo': 'Without recipe',
+  'filter.manualAny': 'Any review state',
+  'filter.manualPending': 'Needs review',
+  'filter.manualComplete': 'Complete',
+  'filter.clear': 'Clear filters',
+
+  'incomplete.title': 'Needs-review queue',
+  'incomplete.subtitle': 'Fields auto-parsing could not recover land here; the flag clears once filled or ignored.',
+  'incomplete.emptyTitle': 'Queue is clear',
+  'incomplete.emptyDesc': 'No records need manual completion',
+  'incomplete.recordFallback': 'Record {n}',
+
+  'recipes.searchPlaceholder': 'Search recipe name / content',
+  'recipes.emptyTitle': 'No recipes yet',
+  'recipes.emptyDesc': 'Use “New recipe” (top-right) to create one first — the workflow file can come later. Ingesting ComfyUI files also creates recipes automatically.',
+  'recipes.awaitingFile': 'File pending',
+  'recipes.usedCount': 'Used {n} time{s}',
+  'recipes.new': 'New recipe',
+
+  'recipe.back': 'Back to recipes',
+  'recipe.noTool': 'Tool not set',
+  'recipe.awaitingFileBadge': 'Workflow file pending',
+  'recipe.downloadWorkflow': 'Download workflow JSON',
+  'recipe.attachCard': 'Attach workflow file',
+  'recipe.replaceCard': 'Replace workflow file',
+  'recipe.workflowJson': 'Workflow JSON',
+  'recipe.workflowPreviewHint': 'Truncated preview — download for the full file',
+  'recipe.history': 'Generation history ({n})',
+  'recipe.historyEmpty': 'Collected only: no generation records yet — a valid state.',
+  'recipe.info': 'Details',
+  'recipe.usage': 'Usage',
+  'recipe.lastUsed': ' · last used {n}',
+  'recipe.contentHash': 'Content hash',
+  'recipe.promptTemplate': 'Prompt template',
+  'recipe.params': 'Param preset',
+  'recipe.createdAt': 'Created',
+
+  'record.back': 'Back to records',
+  'record.preview': 'Artifact preview',
+  'record.noImagePreview': 'Workflow / data file — no image preview',
+  'record.downloadFile': 'Download file',
+  'record.noArtifactTitle': 'No artifact files',
+  'record.noArtifactDesc': 'Manually added records can hold metadata only; attach files later.',
+  'record.provenance': 'Provenance',
+  'record.recipeLabel': 'Recipe:',
+  'record.noRecipe': 'No recipe',
+  'record.createdAt': 'Generated',
+  'record.noPromptValue': '(none)',
+  'record.ingestSource': 'Ingested via',
+  'record.ingestManual': 'manual entry',
+  'record.owner': 'Owner',
+  'record.paramsThisRun': 'Run parameters',
+  'record.files': 'Files ({n})',
+  'record.noFiles': 'No artifact files',
+  'record.videoIndex': 'Video #{n}',
+  'record.imageIndex': 'Image #{n}',
+  'record.storageCopy': 'Copied into store',
+  'record.storageRef': 'Referenced in place',
+  'record.needsSection': 'Needs review ({n})',
+  'record.edit': 'Edit / complete',
+  'record.needsFields': 'Fields to complete:',
+  'record.resolvedSuffix': 'resolved/ignored',
+
+  'upload.title': 'Upload',
+  'upload.dialogTitle': 'Ingest',
+  'upload.dialogDesc': 'ComfyUI metadata is parsed automatically; fields it cannot recover go to the review queue',
+  'upload.tabFiles': 'File upload',
+  'upload.tabManual': 'Manual entry',
+  'upload.dropHint': 'Drop files or click to choose (ComfyUI PNG/JSON exports, images, videos)',
+  'upload.dropSub': 'Multiple allowed; outputs from one run merge into a single record',
+  'upload.removeFile': 'Remove',
+  'upload.linkRecipe': 'Link existing recipe',
+  'upload.noLinkAuto': 'No link (auto-detect)',
+  'upload.noLink': 'No link',
+  'upload.toolPlaceholder': 'comfyui',
+  'upload.promptOverride': 'Prompt override',
+  'upload.promptOverridePlaceholder': 'Used when parsing finds nothing',
+  'upload.submit': 'Ingest',
+  'upload.submitting': 'Ingesting…',
+  'upload.fileCount': '{n} file{s}',
+  'upload.manualToolPlaceholder': 'kling / runway',
+  'upload.manualPrompt': 'Prompt',
+  'upload.manualNote': 'Note',
+  'upload.paths': 'Local file paths (one per line; reference mode moves nothing)',
+
+  'attach.hint': 'Drop or choose the ComfyUI workflow JSON export (canonicalized, content-addressed on save)',
+  'attach.choose': 'Choose file',
+  'attach.uploading': 'Uploading…',
+  'attach.done': 'Workflow file attached',
+
+  'recipeForm.name': 'Name',
+  'recipeForm.namePlaceholder': 'e.g. Photoreal portrait SDXL workflow',
+  'recipeForm.kind': 'Form',
+  'recipeForm.kindWorkflow': 'Workflow file (can add later)',
+  'recipeForm.kindPrompt': 'Prompt template',
+  'recipeForm.kindParams': 'Param preset',
+  'recipeForm.tool': 'Tool',
+  'recipeForm.toolPlaceholder': 'comfyui / kling',
+  'recipeForm.paramsJson': 'Params JSON',
+  'recipeForm.workflowFile': 'Workflow JSON (optional, imported on create)',
+  'recipeForm.desc': 'Workflow-file recipes can be created first; the file and linked assets come later',
+  'recipeForm.create': 'Create',
+  'recipeForm.creating': 'Creating…',
+  'recipeForm.created': 'Recipe created',
+
+  'dup.duplicate': 'Duplicate as draft',
+  'dup.copy': 'Copy',
+  'dup.export': 'Export',
+  'dup.exportTitle': 'Download workflow JSON',
+  'dup.duplicated': 'Duplicated as draft',
+  'dup.failed': 'Duplicate failed',
+
+  'dropzone.title': 'Release to ingest',
+  'dropzone.busy': 'Ingesting…',
+  'dropzone.hint': 'ComfyUI PNG/JSON prompts and workflows are parsed automatically',
+
+  'theme.toLight': 'Switch to light mode',
+  'theme.toDark': 'Switch to dark mode',
+  'lang.toggleTitle': 'Switch to 中文',
+
+  'action.errToolAndPaths': 'Tool and file paths are required',
+  'action.errRecordMissing': 'Save failed: record not found',
+  'action.errRecipeName': 'Recipe needs a name',
+  'action.errParamsJson': 'Param preset must be valid JSON, e.g. {"steps": 30}',
+  'action.errChooseWorkflow': 'Choose a workflow file (JSON)',
+
+  'toast.noFiles': 'No files selected yet',
+  'toast.ingesting': 'Ingesting {n} files…',
+  'toast.ingested': '{n} record{s} ingested',
+  'toast.skippedDup': 'skipped {n} duplicate{s}',
+  'toast.join': ', ',
+  'toast.ingestFailed': 'Ingest failed: {n}',
+  'toast.saveFailed': 'Save failed: {n}',
+  'toast.saved': 'Saved',
+  'toast.createdView': 'Record created · View',
+
+  'reason.tool_not_detected': 'Generation tool not detected',
+  'reason.prompt_not_parsed': 'Prompt not parsed',
+  'reason.workflow_metadata_absent': 'No parsable workflow metadata in the file — link a recipe or fill it in manually',
+  'reason.workflow_content_not_parsed': 'Workflow content not parsed',
+  'reason.media_type_ambiguous': 'MVP only supports image/video — confirm the media type manually',
+
+  'err.unknown': 'Operation failed',
+  'err.recipe_kind_unknown': 'Unknown recipe form',
+  'err.recipe_name_required': 'Recipe must have a name',
+  'err.recipe_content_missing': 'Recipe is missing required content',
+  'err.recipe_not_found': 'Recipe not found',
+  'err.recipe_template_conflict': 'This recipe already has a different workflow template',
+  'err.record_tool_required': 'A generation record must state its tool',
+  'err.record_artifacts_required': 'A generation record needs at least one artifact',
+  'err.artifact_path_required': 'Artifact is missing a file path',
+  'err.artifact_media_type_unsupported': 'Artifact media type must be image or video',
+  'err.prompt_must_be_text': 'Prompt must be text',
+  'err.record_not_found': 'Generation record not found',
+  'err.file_not_found': 'File not found',
+  'err.workflow_kind_mismatch': 'Only workflow-file recipes accept an attached file; use text content for other forms',
+  'err.workflow_json_invalid': 'The workflow file must be valid JSON',
+
+  'meta.title': 'Workflow Asset Store',
+  'meta.description': 'Provenance store for AI-generated assets',
+};
+
+const dictionaries: Record<Locale, Dict> = { zh, en };
+
+const interpolate = (raw: string, n?: string | number) => {
+  if (n === undefined) return raw.replaceAll('{s}', '');
+  const value = String(n);
+  const singular = Number.isFinite(Number(value)) && Number(value) === 1;
+  return raw.replaceAll('{n}', value).replaceAll('{s}', singular ? '' : 's');
+};
+
+export const makeT: MakeT = (locale) => {
+  const dict = dictionaries[locale] ?? zh;
+  const t = ((key: TKey, n?: string | number) => interpolate(dict[key] ?? key, n)) as Translate;
+  t.locale = locale;
+  t.time = (ms: number) => new Date(ms).toLocaleString(BCP47[locale], { hour12: false });
+  return t;
+};
+
+export const LOCALES: Locale[] = ['zh', 'en'];
+
+export const normalizeLocale = (value?: string | null): Locale => (value === 'en' ? 'en' : DEFAULT_LOCALE);
+
+const NEEDS_MANUAL_KEYS: Record<NeedsManualCode, TKey> = {
+  tool_not_detected: 'reason.tool_not_detected',
+  prompt_not_parsed: 'reason.prompt_not_parsed',
+  workflow_metadata_absent: 'reason.workflow_metadata_absent',
+  workflow_content_not_parsed: 'reason.workflow_content_not_parsed',
+  media_type_ambiguous: 'reason.media_type_ambiguous',
+};
+
+const ERROR_KEYS: Record<ErrorCode, TKey> = {
+  unknown: 'err.unknown',
+  recipe_kind_unknown: 'err.recipe_kind_unknown',
+  recipe_name_required: 'err.recipe_name_required',
+  recipe_content_missing: 'err.recipe_content_missing',
+  recipe_not_found: 'err.recipe_not_found',
+  recipe_template_conflict: 'err.recipe_template_conflict',
+  record_tool_required: 'err.record_tool_required',
+  record_artifacts_required: 'err.record_artifacts_required',
+  artifact_path_required: 'err.artifact_path_required',
+  artifact_media_type_unsupported: 'err.artifact_media_type_unsupported',
+  prompt_must_be_text: 'err.prompt_must_be_text',
+  record_not_found: 'err.record_not_found',
+  file_not_found: 'err.file_not_found',
+  workflow_kind_mismatch: 'err.workflow_kind_mismatch',
+  workflow_json_invalid: 'err.workflow_json_invalid',
+};
+
+/** 待补录原因：优先按核心层 code 取词，老数据无 code 时回落到存的原文 */
+export const reasonText = (t: Translate, n: { reasonCode?: NeedsManualCode; reason?: string }) =>
+  n.reasonCode && n.reasonCode in NEEDS_MANUAL_KEYS ? t(NEEDS_MANUAL_KEYS[n.reasonCode]) : (n.reason ?? '');
+
+/** 领域错误：按 code 取词，未知 code 回落 message */
+export const errorText = (t: Translate, e: unknown) => {
+  const code = (e as { code?: ErrorCode } | null)?.code;
+  if (code && code in ERROR_KEYS) return t(ERROR_KEYS[code]);
+  return e instanceof Error ? e.message : String(e);
+};

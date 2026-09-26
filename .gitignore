@@ -1,0 +1,49 @@
+# 依赖与构建产物
+node_modules/
+.pnpm-store/
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# 运行时资产库（ADR-0003 / ADR-0004）：含真实媒体与 SQLite，永不入库
+data/
+.asset-store/
+*.db
+*.db-journal
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# ASSET_DATA_DIR 置空时 Web 解析成 process.cwd()，媒体会直接落到仓库根（apps/web/src/webApi.ts:288）
+/files/
+/uploads/
+
+# 手工导出的数据快照
+data-backup-*/
+data-before-*/
+
+# agent 临时工作区
+.scratch/
+
+# 本地配置与环境变量
+.env
+.env.*
+!.env.example
+
+# 测试与缓存
+coverage/
+.vitest/
+*.log
+
+# 编辑器与系统
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+
+# 机器相关的技能软链（权威内容在 .agents/skills/，由 setup 技能重建）
+.qoder/
+.claude/
