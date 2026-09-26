@@ -29,7 +29,7 @@ describe('核心层 code → 界面文案（端到端）', () => {
     const lib = createLibrary({ sqlite: ':memory:' });
     const storage = createStorage({ dataDir: join(root, 'data'), mode: 'copy' });
     const res = ingestFiles({ lib, storage, sources: [src] });
-    const flags = lib.records.get(res[0]!.recordId)!.needsManual ?? [];
+    const flags = lib.records.get(res[0]!.recordId!)!.needsManual ?? [];
     expect(flags.length).toBeGreaterThan(0);
 
     const en = makeT('en');

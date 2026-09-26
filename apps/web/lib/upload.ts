@@ -22,7 +22,9 @@ export async function ingestFilesToLibrary(files: File[], t: Translate, opts: In
   const tk = toast.loading(t('toast.ingesting', files.length));
   try {
     const r = await uploadIngest(fd);
-    const parts = [t('toast.ingested', r.created)];
+    const parts: string[] = [];
+    if (r.created) parts.push(t('toast.ingested', r.created));
+    if (r.collected_recipes) parts.push(t('toast.collectedRecipes', r.collected_recipes));
     if (r.skipped_existing) parts.push(t('toast.skippedDup', r.skipped_existing));
     if (r.record_ids.length === 1) {
       toast.success(`${parts.join(t('toast.join'))} · ${t('common.viewRecord')}`, { id: tk, action: { label: t('common.viewRecord'), onClick: () => window.location.assign(`/records/${r.record_ids[0]}`) } });

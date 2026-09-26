@@ -122,11 +122,14 @@ export function createTools(options: { lib?: Library; dataDir: string }): Tools 
         if (prompt !== undefined) explicit.prompt = prompt;
         if (params !== undefined) explicit.params = params;
         const results = lib.ingest({ sources: files, explicit, mode });
+        const collected = new Set<string>();
+        for (const r of results) if (r.status === 'collected' && r.recipeId) collected.add(r.recipeId);
         return {
           status: 'ok',
           created: results.filter((r) => r.status === 'created').length,
           skipped_existing: results.filter((r) => r.status === 'existing').length,
-          record_ids: results.map((r) => r.recordId),
+          collected_recipes: collected.size,
+          record_ids: results.flatMap((r) => (r.recordId ? [r.recordId] : [])),
         };
       } catch (e) {
         return { status: 'error', message: e instanceof Error ? e.message : String(e) };

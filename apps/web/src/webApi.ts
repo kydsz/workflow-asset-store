@@ -34,6 +34,8 @@ export interface RecordCard {
 export interface UploadResult {
   created: number;
   skipped_existing: number;
+  /** 拖入的裸工作流 JSON：只归并/新建配方，不产生生成记录，故不进使用统计 */
+  collected_recipes: number;
   record_ids: string[];
 }
 
@@ -168,7 +170,7 @@ export function createWebApi(options: { lib: Library; dataDir: string }): WebApi
       });
       const explicit: IngestExplicit = { tool: input.tool, prompt: input.prompt, note: input.note, recipeId: input.recipeId, artifacts };
       const [first] = lib.ingest({ sources: [], explicit });
-      return lib.records.get(first!.recordId)!;
+      return lib.records.get(first!.recordId!)!;
     },
 
     async ingestUpload(form) {
@@ -189,10 +191,13 @@ export function createWebApi(options: { lib: Library; dataDir: string }): WebApi
       if (prompt) explicit.prompt = prompt;
       if (recipeId) explicit.recipeId = recipeId;
       const results = lib.ingest({ sources, explicit });
+      const collected = new Set<string>();
+      for (const r of results) if (r.status === 'collected' && r.recipeId) collected.add(r.recipeId);
       return {
         created: results.filter((r) => r.status === 'created').length,
         skipped_existing: results.filter((r) => r.status === 'existing').length,
-        record_ids: results.map((r) => r.recordId),
+        collected_recipes: collected.size,
+        record_ids: results.flatMap((r) => (r.recordId ? [r.recordId] : [])),
       };
     },
 

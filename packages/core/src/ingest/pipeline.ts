@@ -17,8 +17,9 @@ export interface IngestExplicit {
 }
 
 export interface IngestResult {
-  status: 'created' | 'existing';
-  recordId: string;
+  /** collected：源文件是裸工作流清单，只归并成配方，没有对应的生成记录 */
+  status: 'created' | 'existing' | 'collected';
+  recordId?: string;
   recipeId?: string;
   files: string[];
 }
@@ -27,6 +28,8 @@ const VIDEO_EXT = new Set(['.mp4', '.mov', '.webm', '.avi', '.mkv']);
 
 const mediaTypeOf = (p: string): ArtifactMediaType => (VIDEO_EXT.has(extname(p).toLowerCase()) ? 'video' : 'image');
 const titleOf = (p: string) => basename(p, extname(p));
+/** 工作流清单：ComfyUI 导出的 .json 本身就是配方内容，不是任何一次生成的输出物 */
+const isWorkflowManifest = (p: string) => extname(p).toLowerCase() === '.json';
 
 interface Item {
   file: string;
@@ -121,6 +124,11 @@ export function ingestFiles(options: {
       if (recipeId) item.recipeId = recipeId;
     }
     if (!item.recipeId && explicit?.recipeId) item.recipeId = explicit.recipeId;
+    // 解析得出配方的裸 JSON 导出属"收藏一份配方"，不是一次生成：建记录会虚增配方使用次数
+    if (item.recipeId && kind === 'comfyui' && isWorkflowManifest(file)) {
+      results.push({ status: 'collected', recipeId: item.recipeId, files: [file] });
+      continue;
+    }
     items.push(item);
   }
 

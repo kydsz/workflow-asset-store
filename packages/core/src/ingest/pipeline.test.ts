@@ -275,3 +275,45 @@ describe('ingest 入库管线（路径 1a/1b 的 core 部分）', () => {
     expect(lib.records.get(res[0]!.recordId)!.recipeId).toBe(recipe.id);
   });
 });
+
+describe('配方使用统计口径：纯工作流 JSON 不算一次生成', () => {
+  it('先入生成图、再拖同工作流的 JSON 导出：配方 uses 仍为 1', () => {
+    ingestFiles({ lib, storage, sources: [write('usage.png', comfyPng('px-usage'))] });
+    const recipeId = lib.recipes.list()[0]!.id;
+    expect(lib.records.stats(recipeId).uses).toBe(1);
+
+    ingestFiles({ lib, storage, sources: [write('usage.json', JSON.stringify(apiPrompt))] });
+
+    expect(lib.recipes.list()).toHaveLength(1);
+    expect(lib.records.stats(recipeId).uses).toBe(1);
+  });
+
+  it('只拖工作流 JSON 属纯收藏建档：建配方但不产生生成记录', () => {
+    const res = ingestFiles({ lib, storage, sources: [write('collect.json', JSON.stringify(apiPrompt))] });
+    expect(lib.recipes.list()).toHaveLength(1);
+    expect(lib.records.search({})).toHaveLength(0);
+    expect(res[0]).toMatchObject({ status: 'collected', recipeId: lib.recipes.list()[0]!.id });
+  });
+
+  it('重复拖同一份工作流 JSON：按模板哈希命中同一配方，不新增配方', () => {
+    const src = write('again.json', JSON.stringify(apiPrompt));
+    ingestFiles({ lib, storage, sources: [src] });
+    const recipeId = lib.recipes.list()[0]!.id;
+    ingestFiles({ lib, storage, sources: [src] });
+    expect(lib.recipes.list()).toHaveLength(1);
+    expect(lib.recipes.list()[0]!.id).toBe(recipeId);
+  });
+
+  it('同批次图 + 其工作流 JSON：JSON 不当生成记录，批次内已建配方仍照常归并', () => {
+    const res = ingestFiles({
+      lib,
+      storage,
+      sources: [write('both.png', comfyPng('px-both')), write('wf.json', JSON.stringify(apiPrompt))],
+    });
+    const created = res.filter((r) => r.status === 'created');
+    expect(created).toHaveLength(1);
+    expect(lib.records.search({})).toHaveLength(1);
+    expect(lib.records.get(created[0]!.recordId)!.artifacts).toHaveLength(1);
+    expect(lib.recipes.list()).toHaveLength(1);
+  });
+});

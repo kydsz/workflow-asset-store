@@ -170,8 +170,29 @@ describe('上传入库与手动补录', () => {
     expect(lib.records.get(r.record_ids[0]!)!.artifacts).toHaveLength(2);
   });
 
-  it('手动补录（1d）：引用本机路径建记录，recipe 为空合法', async () => {
-    const f = join(srcDir, 'cloud.mp4');
+  it('拖入 ComfyUI 工作流 JSON：只算收藏配方，不计入生成记录与使用统计', async () => {
+    const apiFlow = JSON.stringify({
+      '1': { class_type: 'CLIPTextEncode', inputs: { text: 'web prompt px-1' } },
+      '2': { class_type: 'KSampler', inputs: { seed: 1, steps: 21, cfg: 5 } },
+    });
+    const form = new FormData();
+    form.append('files', new Blob([apiFlow], { type: 'application/json' }), 'wf.json');
+    const r = await api.ingestUpload(form);
+    expect(r).toMatchObject({ created: 0, collected_recipes: 1, record_ids: [] });
+    expect(lib.recipes.list()).toHaveLength(1);
+    const recipeId = lib.recipes.list()[0]!.id;
+    expect(api.recipeStats(recipeId).uses).toBe(0);
+
+    // 再传该工作流真实生成的图：记录 +1、使用次数 +1，且不产生第二个配方
+    const form2 = new FormData();
+    form2.append('files', new Blob([new Uint8Array(comfyPng('px-1'))], { type: 'image/png' }), 'g.png');
+    const r2 = await api.ingestUpload(form2);
+    expect(r2).toMatchObject({ created: 1, collected_recipes: 0 });
+    expect(lib.recipes.list()).toHaveLength(1);
+    expect(api.recipeStats(recipeId).uses).toBe(1);
+  });
+
+  it('手动补录（1d）：引用本机路径建记录，recipe 为空合法', async () => {    const f = join(srcDir, 'cloud.mp4');
     writeFileSync(f, 'fake');
     const rec = await api.createManualRecord({ tool: 'kling', prompt: '可灵生成', paths: [f] });
     expect(rec.tool).toBe('kling');
