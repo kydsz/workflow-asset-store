@@ -42,13 +42,19 @@ export async function Gallery({ cards }: { cards: RecordCard[] }) {
           )}
           <div className="flex flex-col gap-1.5 p-3">
             <div className="flex flex-wrap items-center gap-1.5">
-              <Badge variant="secondary">{c.tool}</Badge>
-              {c.recipeName ? <Badge variant="outline" className="max-w-40 truncate">{c.recipeName}</Badge> : null}
+              <Badge variant="secondary" className="max-w-full">
+                <span className="min-w-0 truncate">{c.tool}</span>
+              </Badge>
+              {c.recipeName ? (
+                <Badge variant="outline" className="max-w-full">
+                  <span className="min-w-0 truncate">{c.recipeName}</span>
+                </Badge>
+              ) : null}
               {c.artifactCount > 1 ? <Badge variant="outline">{t('gallery.artifacts', c.artifactCount)}</Badge> : null}
               {c.needsManual.length ? <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 dark:text-amber-400">{t('gallery.needsManualCount', c.needsManual.length)}</Badge> : null}
             </div>
             <div className="line-clamp-2 text-sm text-foreground/90">{c.prompt ?? <span className="text-muted-foreground">{t('common.noPrompt')}</span>}</div>
-            <div className="text-xs text-muted-foreground">{t.time(c.createdAt)}</div>
+            <div className="truncate text-xs text-muted-foreground">{t.time(c.createdAt)}</div>
           </div>
         </Link>
       ))}

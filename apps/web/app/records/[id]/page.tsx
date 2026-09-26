@@ -97,11 +97,13 @@ export default async function RecordDetail(props: { params: Promise<{ id: string
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="secondary">{rec.tool}</Badge>
+                <Badge variant="secondary" className="max-w-40">
+                  <span className="min-w-0 truncate">{rec.tool}</span>
+                </Badge>
                 {recipe ? (
-                  <Badge variant="outline">
+                  <Badge variant="outline" className="max-w-64">
                     {t('record.recipeLabel')}
-                    <Link href={`/recipes/${recipe.id}`} className="underline underline-offset-2">
+                    <Link href={`/recipes/${recipe.id}`} className="min-w-0 truncate underline underline-offset-2">
                       {recipe.name}
                     </Link>
                   </Badge>
@@ -206,8 +208,8 @@ export default async function RecordDetail(props: { params: Promise<{ id: string
 function Row(p: { k: string; v: string; muted?: boolean }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
-      <span className="shrink-0 text-xs text-muted-foreground">{p.k}</span>
-      <span className={p.muted ? 'text-sm text-muted-foreground' : 'text-sm text-right break-all'}>{p.v}</span>
+      <span className="max-w-[45%] shrink-0 text-xs text-muted-foreground [overflow-wrap:anywhere]">{p.k}</span>
+      <span className={p.muted ? 'min-w-0 text-sm text-muted-foreground' : 'min-w-0 text-sm text-right break-all'}>{p.v}</span>
     </div>
   );
 }

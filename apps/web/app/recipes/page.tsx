@@ -38,7 +38,7 @@ export default async function Recipes(props: {
       </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {[
             ['', t('common.all')],
             ['workflow-file', t(KIND_KEYS['workflow-file'])],
@@ -83,16 +83,23 @@ export default async function Recipes(props: {
             return (
             <div
               key={r.id}
-              className="flex flex-col gap-2 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:border-primary/50"
+              className="flex min-w-0 flex-col gap-2 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:border-primary/50"
             >
               <div className="flex flex-wrap items-center gap-1.5">
                 <Badge variant="secondary">{kindKey ? t(kindKey) : r.kind}</Badge>
-                {r.tool ? <Badge variant="outline">{r.tool}</Badge> : null}
+                {r.tool ? (
+                  <Badge variant="outline" className="max-w-40">
+                    <span className="min-w-0 truncate">{r.tool}</span>
+                  </Badge>
+                ) : null}
                 {r.kind === 'workflow-file' && !r.workflowFilePath ? (
                   <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 dark:text-amber-400">{t('recipes.awaitingFile')}</Badge>
                 ) : null}
               </div>
-              <Link href={`/recipes/${r.id}`} className="font-medium underline-offset-2 hover:underline">
+              <Link
+                href={`/recipes/${r.id}`}
+                className="min-w-0 font-medium [overflow-wrap:anywhere] underline-offset-2 hover:underline"
+              >
                 {r.name}
               </Link>
               {r.prompt ? <div className="line-clamp-2 text-sm text-muted-foreground">{r.prompt}</div> : null}

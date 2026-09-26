@@ -29,6 +29,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
+/** 工作流原文多为压缩后的单行 JSON，直接渲染会撑出横向滚动；尽量格式化后再交给 pre-wrap 换行 */
+function formatWorkflowJson(text: string) {
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2);
+  } catch {
+    return text;
+  }
+}
+
+const PRE_WRAP = 'overflow-y-auto overflow-x-hidden whitespace-pre-wrap break-all rounded-md bg-muted/50 text-xs leading-relaxed';
+
 export default async function RecipeDetail(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   const t = await getServerT();
@@ -38,7 +49,7 @@ export default async function RecipeDetail(props: { params: Promise<{ id: string
   if (!detail) notFound();
   const { recipe, records, stats } = detail;
   const awaitingFile = recipe.kind === 'workflow-file' && !recipe.workflowFilePath;
-  const workflow = detail.workflowText ?? undefined;
+  const workflow = detail.workflowText ? formatWorkflowJson(detail.workflowText) : undefined;
 
   return (
     <>
@@ -47,9 +58,11 @@ export default async function RecipeDetail(props: { params: Promise<{ id: string
       </Link>
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">{recipe.name}</h1>
+        <h1 className="min-w-0 text-xl font-semibold tracking-tight [overflow-wrap:anywhere]">{recipe.name}</h1>
         <Badge variant="secondary">{kindLabel(recipe.kind)}</Badge>
-        <Badge variant="outline">{recipe.tool ?? t('recipe.noTool')}</Badge>
+        <Badge variant="outline" className="max-w-64">
+          <span className="min-w-0 truncate">{recipe.tool ?? t('recipe.noTool')}</span>
+        </Badge>
         {awaitingFile ? <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 dark:text-amber-400">{t('recipe.awaitingFileBadge')}</Badge> : null}
         <span className="ml-auto flex items-center gap-2">
           <DuplicateRecipeButton recipeId={recipe.id} />
@@ -63,8 +76,8 @@ export default async function RecipeDetail(props: { params: Promise<{ id: string
         </span>
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[1fr_400px]">
-        <div className="flex flex-col gap-4">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="flex min-w-0 flex-col gap-4">
           {recipe.kind === 'workflow-file' ? (
             <Card>
               <CardHeader>
@@ -85,7 +98,7 @@ export default async function RecipeDetail(props: { params: Promise<{ id: string
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <pre className="max-h-96 overflow-auto rounded-md bg-muted/50 p-3 text-xs leading-relaxed">{workflow.slice(0, 4000)}</pre>
+                <pre className={`${PRE_WRAP} max-h-96 p-3`}>{workflow.slice(0, 6000)}</pre>
               </CardContent>
             </Card>
           ) : null}
@@ -103,18 +116,20 @@ export default async function RecipeDetail(props: { params: Promise<{ id: string
                     <div key={r.id}>
                       {i > 0 ? <Separator /> : null}
                       <div className="flex flex-wrap items-center gap-3 px-6 py-3 text-sm">
-                        <Link href={`/records/${r.id}`} className="min-w-0 flex-1 truncate hover:underline">
+                        <Link href={`/records/${r.id}`} className="min-w-0 flex-1 basis-40 truncate hover:underline">
                           {r.prompt ?? <span className="text-muted-foreground">{t('common.noPrompt')}</span>}
                         </Link>
-                        <Badge variant="outline">{r.tool}</Badge>
+                        <Badge variant="outline" className="max-w-40">
+                          <span className="min-w-0 truncate">{r.tool}</span>
+                        </Badge>
                         {r.needsManual?.length ? (
-                          <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 dark:text-amber-400">{t('common.needsManual')}</Badge>
+                          <Badge className="shrink-0 bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 dark:text-amber-400">{t('common.needsManual')}</Badge>
                         ) : null}
-                        <span className="text-xs text-muted-foreground">{t.time(r.createdAt)}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground">{t.time(r.createdAt)}</span>
                         {recipe.workflowFilePath ? (
                           <a
                             href={`/api/recipes/${recipe.id}/workflow?record_id=${r.id}`}
-                            className="text-xs text-primary hover:underline"
+                            className="shrink-0 text-xs text-primary hover:underline"
                             title={t('common.exportWithParamsHint')}
                           >
                             {t('common.exportWithParams')}
@@ -145,12 +160,12 @@ export default async function RecipeDetail(props: { params: Promise<{ id: string
             ) : null}
             {recipe.prompt ? (
               <Field label={t('recipe.promptTemplate')}>
-                <code className="whitespace-pre-wrap text-xs">{recipe.prompt}</code>
+                <code className="whitespace-pre-wrap break-all text-xs">{recipe.prompt}</code>
               </Field>
             ) : null}
             {recipe.params ? (
               <Field label={t('recipe.params')}>
-                <pre className="max-h-64 overflow-auto rounded-md bg-muted/50 p-2 text-xs">{JSON.stringify(recipe.params, null, 2)}</pre>
+                <pre className={`${PRE_WRAP} max-h-64 p-2`}>{JSON.stringify(recipe.params, null, 2)}</pre>
               </Field>
             ) : null}
             <Field label={t('recipe.createdAt')}>{t.time(recipe.createdAt)}</Field>

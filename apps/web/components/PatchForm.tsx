@@ -40,15 +40,15 @@ export function PatchForm(props: {
 
   return (
     <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="grid gap-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+        <div className="grid min-w-0 gap-2">
           <Label htmlFor="pt-tool">{t('common.tool')}</Label>
           <Input id="pt-tool" name="tool" defaultValue={props.initial.tool} />
         </div>
-        <div className="grid gap-2">
+        <div className="grid min-w-0 gap-2">
           <Label>{t('common.recipe')}</Label>
           <Select value={recipeId} onValueChange={setRecipeId}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full min-w-0">
               <SelectValue placeholder={t('common.none')} />
             </SelectTrigger>
             <SelectContent>

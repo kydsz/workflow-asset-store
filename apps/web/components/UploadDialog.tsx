@@ -104,8 +104,8 @@ export function UploadDialog({ recipes }: { recipes: { id: string; name: string 
             {files.length ? (
               <div className="flex flex-wrap gap-1.5">
                 {files.map((f, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs">
-                    {f.name}
+                  <span key={i} className="inline-flex max-w-full items-center gap-1 rounded-md bg-secondary px-2 py-1 text-xs">
+                    <span className="min-w-0 break-all">{f.name}</span>
                     <button type="button" aria-label={`${t('upload.removeFile')} ${f.name}`} onClick={() => setFiles(files.filter((_, j) => j !== i))}>
                       <X className="size-3 text-muted-foreground" />
                     </button>
@@ -113,12 +113,12 @@ export function UploadDialog({ recipes }: { recipes: { id: string; name: string 
                 ))}
               </div>
             ) : null}
-            <div className="grid gap-2">
+            <div className="grid min-w-0 gap-2">
               <Label>
                 {t('upload.linkRecipe')} {t('common.optional')}
               </Label>
               <Select value={recipeId} onValueChange={setRecipeId}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue placeholder={t('upload.noLinkAuto')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -131,14 +131,14 @@ export function UploadDialog({ recipes }: { recipes: { id: string; name: string 
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+              <div className="grid min-w-0 gap-2">
                 <Label htmlFor="up-tool">
                   {t('common.tool')} {t('common.optional')}
                 </Label>
                 <Input id="up-tool" value={tool} onChange={(e) => setTool(e.target.value)} placeholder={t('upload.toolPlaceholder')} />
               </div>
-              <div className="grid gap-2">
+              <div className="grid min-w-0 gap-2">
                 <Label htmlFor="up-prompt">
                   {t('upload.promptOverride')} {t('common.optional')}
                 </Label>
@@ -184,17 +184,17 @@ function ManualTab({ recipes, onDone }: { recipes: { id: string; name: string }[
   };
   return (
     <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="grid gap-2">
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
+        <div className="grid min-w-0 gap-2">
           <Label htmlFor="mn-tool">{t('common.tool')}</Label>
           <Input id="mn-tool" name="tool" placeholder={t('upload.manualToolPlaceholder')} required />
         </div>
-        <div className="grid gap-2">
+        <div className="grid min-w-0 gap-2">
           <Label>
             {t('upload.linkRecipe')} {t('common.optional')}
           </Label>
           <Select value={recipeId} onValueChange={setRecipeId}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full min-w-0">
               <SelectValue placeholder={t('upload.noLink')} />
             </SelectTrigger>
             <SelectContent>
