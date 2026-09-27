@@ -115,6 +115,19 @@ describe('attachWorkflowTemplate：先建后挂的统一入口（与自动入库
     expect(filesDir().length).toBe(n);
   });
 
+  it('存量无坐标模板文件（旧口径落盘）再遇带坐标内容：原地补回布局，归并身份不变', () => {
+    const posLess = { ...uiGraph, nodes: (uiGraph.nodes as Record<string, unknown>[]).map(({ pos: _p, size: _s, ...rest }) => rest) };
+    const r = attachWorkflowTemplate({ lib, storage }, { recipeId: draft().id, bytes: Buffer.from(JSON.stringify(posLess)) }).recipe;
+    const before = r.workflowFilePath!;
+    expect((JSON.parse(readFileSync(before, 'utf8')) as { nodes: unknown[] }).nodes[0]).not.toHaveProperty('pos');
+
+    const out = attachWorkflowTemplate({ lib, storage }, { recipeId: r.id, bytes: Buffer.from(JSON.stringify(uiGraph)) }).recipe;
+    expect(out.id).toBe(r.id);
+    expect(out.contentHash).toBe(r.contentHash);
+    expect(out.workflowFilePath).not.toBe(before);
+    expect((JSON.parse(readFileSync(out.workflowFilePath!, 'utf8')) as { nodes: { pos: number[] }[] }).nodes[0]!.pos).toEqual([10, 20]);
+  });
+
   it('内容与库内旧口径配方（原始内容落盘）模板相同：自愈归并，不产生第二份配方', () => {
     const rawFile = storage.place('legacy-src', Buffer.from(JSON.stringify(apiGraph)), '.json').path;
     const other = lib.recipes.create({
@@ -212,6 +225,14 @@ describe('exportRecipeWorkflow：导出即回填，源文件不动', () => {
     const nodes = (json['nodes'] as { type: string; widgets_values: unknown[] }[]).filter((n) => n.type === 'CLIPTextEncode' || n.type === 'KSampler');
     expect((nodes.find((n) => n.type === 'CLIPTextEncode')!.widgets_values[0])).toBe('ui prompt');
     expect((nodes.find((n) => n.type === 'KSampler')!.widgets_values[0])).toBe(888);
+  });
+
+  it('UI 图导出保留画布偏移：节点不会全叠在原点', () => {
+    const r = attach(uiGraph);
+    const nodes = (parse(exportRecipeWorkflow(lib, { recipe: r })!.text)['nodes'] as { id: number; pos: number[]; size: number[] }[]);
+    expect(nodes.find((n) => n.id === 6)!.pos).toEqual([10, 20]);
+    expect(nodes.find((n) => n.id === 3)!.pos).toEqual([400, 50]);
+    expect(nodes.find((n) => n.id === 3)!.size).toEqual([280, 260]);
   });
 
   it('非法 JSON 原样导出；文件缺失返回 null', () => {

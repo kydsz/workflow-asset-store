@@ -191,6 +191,9 @@ describe('模板哈希：只改提示词/seed 归并同一配方', () => {
       'b.json',
     );
     expect(a.contentHash).toBe(b.contentHash);
+    // 坐标不进哈希，但必须留在模板内容里，否则导出后所有节点叠在画布原点
+    expect((a.recipeContent as { nodes: { pos: number[] }[] }).nodes[0]!.pos).toEqual([10, 20]);
+    expect((b.recipeContent as { nodes: { pos: number[] }[] }).nodes[1]!.pos).toEqual([999, -44]);
   });
 
   it('rehydrateTemplate 回填哨兵并识别模板', () => {

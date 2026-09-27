@@ -180,21 +180,34 @@ export const WAS_PROMPT = '__was_prompt';
 export const WAS_SEED = '__was_seed';
 const WAS_SENTINELS = new Set<string>([WAS_PROMPT, WAS_SEED]);
 
-/** 配方模板化：剥离运行相关的正向提示词（首个文本编码节点）与各 KSampler 的 seed，使「只改提示词/换 seed」的图归并到同一配方 */
+/** 画布视图噪音：不属于配方身份，也不影响运行。只从哈希输入里丢弃，落盘内容保留，否则导出时所有节点叠在原点 */
+export function stripCanvasNoise(json: unknown): unknown {
+  if (!json || typeof json !== 'object' || Array.isArray(json)) return json;
+  const nodes = (json as Record<string, unknown>)['nodes'];
+  if (!Array.isArray(nodes)) return json;
+  const root = structuredClone(json) as Record<string, unknown>;
+  delete root['extra'];
+  delete root['config'];
+  delete root['widget_idx_map'];
+  for (const n of root['nodes'] as Record<string, unknown>[]) {
+    delete n['pos'];
+    delete n['size'];
+    delete n['bgcolor'];
+    delete n['flags'];
+  }
+  return root;
+}
+
+/** 配方身份的哈希口径：模板剥掉画布噪音后取规范 JSON 的 SHA-256 */
+export function templateHash(template: unknown): string {
+  return sha256hex(Buffer.from(canonicalJson(stripCanvasNoise(template)), 'utf8'));
+}
+
+/** 配方模板化：只剥离运行相关的正向提示词（首个文本编码节点）与各 KSampler 的 seed，使「只改提示词/换 seed」的图归并到同一配方；画布布局原样保留，坐标差异由 stripCanvasNoise 在哈希时忽略 */
 export function stripVolatile(json: unknown): unknown {
   if (!json || typeof json !== 'object' || Array.isArray(json)) return json;
   const root = structuredClone(json) as Record<string, unknown>;
   if (Array.isArray(root['nodes'])) {
-    // 画布视图噪音不属于配方身份：平移/缩放、节点坐标、前端簿记字段一并剥离
-    delete root['extra'];
-    delete root['config'];
-    delete root['widget_idx_map'];
-    for (const n of root['nodes'] as JsonFlow[] & Record<string, unknown>[]) {
-      delete (n as Record<string, unknown>)['pos'];
-      delete (n as Record<string, unknown>)['size'];
-      delete (n as Record<string, unknown>)['bgcolor'];
-      delete (n as Record<string, unknown>)['flags'];
-    }
     let promptSet = false;
     for (const n of root['nodes'] as JsonFlow[]) {
       if (!Array.isArray(n.widgets_values)) continue;
@@ -292,6 +305,6 @@ export function extractComfyui(buf: Buffer, name: string): ExtractResult {
     negative,
     params: Object.keys(params).length ? params : undefined,
     recipeContent,
-    contentHash: recipeContent === undefined ? undefined : sha256hex(Buffer.from(canonicalJson(recipeContent))),
+    contentHash: recipeContent === undefined ? undefined : templateHash(recipeContent),
   };
 }

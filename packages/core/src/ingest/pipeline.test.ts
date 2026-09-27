@@ -160,6 +160,35 @@ describe('ingest 入库管线（路径 1a/1b 的 core 部分）', () => {
     expect(lib.records.get(first[0]!.recordId)!.artifacts).toHaveLength(1);
   });
 
+  it('存量无坐标模板文件：重复入库时把画布布局补回来，配方身份不变', () => {
+    const ui = {
+      nodes: [
+        { id: 6, type: 'CLIPTextEncode', pos: [10, 20], widgets_values: ['a cat astronaut, cinematic light'] },
+        { id: 3, type: 'KSampler', pos: [400, 50], widgets_values: [12345, 'fixed', 30] },
+      ],
+      links: [],
+    };
+    const png = Buffer.concat([PNG_SIG, IHDR, textChunk('workflow', JSON.stringify(ui)), pngChunk('IDAT', Buffer.from('px-ui')), IEND]);
+    const f = write('ui.png', png);
+    const first = ingestFiles({ lib, storage, sources: [f] });
+    const recipe = lib.recipes.get(first[0]!.recipeId!)!;
+    expect(readFileSync(recipe.workflowFilePath!, 'utf8')).toContain('"pos"');
+
+    // 旧口径落盘的模板：坐标被一并剥掉，导出时节点全叠在原点
+    const stripped = JSON.parse(readFileSync(recipe.workflowFilePath!, 'utf8')) as { nodes: Record<string, unknown>[] };
+    for (const n of stripped.nodes) delete n['pos'];
+    const legacyPath = recipe.workflowFilePath!;
+    writeFileSync(legacyPath, canonicalJson(stripped));
+
+    const again = ingestFiles({ lib, storage, sources: [f] });
+    expect(again[0]!.status).toBe('existing');
+    const healed = lib.recipes.get(recipe.id)!;
+    expect(healed.contentHash).toBe(recipe.contentHash);
+    // 补回的内容就是坐标版模板本身，内容寻址下回到同一文件
+    expect(healed.workflowFilePath).toBe(legacyPath);
+    expect(readFileSync(healed.workflowFilePath!, 'utf8')).toContain('"pos"');
+  });
+
   it('同一次运行的多输出合并为 1 条记录 + N 个产物', () => {
     const res = ingestFiles({
       lib,

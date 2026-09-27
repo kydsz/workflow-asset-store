@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { basename, extname } from 'node:path';
 import { DomainError } from '../domain/errors.js';
 import type { Recipe } from '../domain/types.js';
-import { canonicalJson, containsTemplateSentinel, rehydrateTemplate, sha256hex, stripVolatile } from '../extractors/index.js';
+import { canonicalJson, containsTemplateSentinel, rehydrateTemplate, stripVolatile, templateHash } from '../extractors/index.js';
 import type { Library } from '../index.js';
 import type { RecipeRepository } from '../db/library.js';
 import type { Storage } from '../storage/storage.js';
@@ -15,10 +15,36 @@ export interface TemplateDigest {
   contentHash: string;
 }
 
-/** 配方身份的唯一口径：剥离 prompt/seed/画布噪音后的规范化模板 + 其哈希 */
+/** 配方身份的唯一口径：剥离运行值与画布噪音后的规范化模板 + 其哈希（落盘模板保留画布布局） */
 export function templateOf(raw: unknown): TemplateDigest {
   const template = stripVolatile(raw);
-  return { template, contentHash: sha256hex(Buffer.from(canonicalJson(template), 'utf8')) };
+  return { template, contentHash: templateHash(template) };
+}
+
+const nodesArrayOf = (json: unknown): Record<string, unknown>[] | undefined => {
+  if (!json || typeof json !== 'object' || Array.isArray(json)) return undefined;
+  const nodes = (json as Record<string, unknown>)['nodes'];
+  return Array.isArray(nodes) ? (nodes as Record<string, unknown>[]) : undefined;
+};
+
+/** 存量模板文件是「坐标也一起剥离」那版口径落盘的，导出时节点全叠在原点；本次内容带坐标则原地补回布局（哈希口径不变，归并身份不动） */
+function healLostLayout(recipes: RecipeRepository, storage: Storage, existing: Recipe, template: unknown): Recipe {
+  const path = existing.workflowFilePath;
+  if (!path || !existsSync(path) || storage.mode !== 'copy') return existing;
+  const stored = nodesArrayOf(tryParseJson(readFileSync(path, 'utf8')));
+  const incoming = nodesArrayOf(template);
+  if (!stored || !incoming) return existing;
+  if (stored.some((n) => n['pos'] !== undefined) || !incoming.some((n) => n['pos'] !== undefined)) return existing;
+  const placed = storage.place(`${existing.id}.layout.tmp`, Buffer.from(canonicalJson(template), 'utf8'), '.json');
+  return recipes.backfill(existing.id, { workflowFilePath: placed.path });
+}
+
+function tryParseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
 }
 
 /** 旧库存量配方是改前落的原始内容（哈希为旧口径）：按其自身剥离后的哈希再匹配一次，实现自愈归并 */
@@ -49,7 +75,7 @@ export function matchOrPlace(
   opts: { template: unknown; contentHash: string; srcFile: string; name?: string; tool?: string },
 ): { recipeId: string; created: boolean } {
   const existing = matchTemplate(recipes, opts.contentHash);
-  if (existing) return { recipeId: existing.id, created: false };
+  if (existing) return { recipeId: healLostLayout(recipes, storage, existing, opts.template).id, created: false };
   const placed = storage.place(opts.srcFile, Buffer.from(canonicalJson(opts.template), 'utf8'), '.json');
   const recipe = recipes.create({
     kind: 'workflow-file',
@@ -83,7 +109,7 @@ export function attachWorkflowTemplate(io: AttachIO, opts: { recipeId: string; b
   if (match) {
     if (match.id === target.id) {
       const path = target.workflowFilePath || match.workflowFilePath;
-      if (target.workflowFilePath && target.contentHash === contentHash) return { recipe: target };
+      if (target.workflowFilePath && target.contentHash === contentHash) return { recipe: healLostLayout(recipes, io.storage, target, template) };
       return { recipe: recipes.backfill(target.id, { workflowFilePath: path, contentHash }) };
     }
     return { recipe: match, mergedInto: match.id };

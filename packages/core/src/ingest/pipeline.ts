@@ -99,14 +99,16 @@ export function ingestFiles(options: {
   for (const file of options.sources) {
     const buf = readFileSync(file);
     const hash = sha256hex(buf);
+    const kind = sniffSource(buf, file);
+    const extract = kind === 'comfyui' ? extractComfyui(buf, file) : undefined;
     const known = lib.records.findByFileHash(hash);
     if (known) {
+      // 重复入库不再建新配方，但仍走一次归并：命中旧口径模板文件时把丢失的画布布局补回来
+      if (extract) ensureRecipe(lib, storage, file, extract);
       results.push({ status: 'existing', recordId: known.id, recipeId: known.recipeId, files: [file] });
       continue;
     }
 
-    const kind = sniffSource(buf, file);
-    const extract = kind === 'comfyui' ? extractComfyui(buf, file) : undefined;
     const has = (field: keyof IngestExplicit) => explicit !== undefined && field in explicit;
 
     const needsManual: NeedsManualField[] = [];
