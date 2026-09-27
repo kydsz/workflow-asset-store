@@ -12,6 +12,17 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   }
 }
 
+/** 重命名配方：body { name } */
+export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
+  const { id } = await ctx.params;
+  const body = (await req.json()) as { name?: string };
+  try {
+    return NextResponse.json(getWebApi().renameRecipe(id, body.name ?? ''));
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
+  }
+}
+
 /** 默认移入回收站；?purge=1 直接彻底删除（含独占工作流文件回收） */
 export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;

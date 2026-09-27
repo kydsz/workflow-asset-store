@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { AttachWorkflowForm } from '@/components/AttachWorkflowForm';
 import { DuplicateRecipeButton } from '@/components/DuplicateRecipeButton';
+import { RenameRecipeButton } from '@/components/RenameRecipeButton';
 import { PurgeButton, RestoreButton, TrashButton } from '@/components/TrashButtons';
 
 export const dynamic = 'force-dynamic';
@@ -83,6 +84,7 @@ export default async function RecipeDetail(props: { params: Promise<{ id: string
             </>
           ) : (
             <>
+              <RenameRecipeButton recipeId={recipe.id} currentName={recipe.name} />
               <DuplicateRecipeButton recipeId={recipe.id} />
               {workflow ? (
                 <Button asChild variant="outline" size="sm">

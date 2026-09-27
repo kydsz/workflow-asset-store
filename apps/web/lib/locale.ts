@@ -170,6 +170,14 @@ export const zh = {
   'dup.duplicated': '已复制为新草稿',
   'dup.failed': '复制失败',
 
+  'rename.action': '重命名',
+  'rename.title': '重命名配方',
+  'rename.desc': '只改显示名称，不影响模板归并身份与关联记录。',
+  'rename.name': '名称',
+  'rename.save': '保存',
+  'rename.saving': '保存中…',
+  'rename.done': '配方已重命名',
+
   'delete.action': '删除',
   'delete.confirmTitle': '移入回收站？',
   'delete.recordDesc': '这条生成记录会进回收站，可随时恢复；只有在回收站里「彻底删除」才会清掉库内文件。',
@@ -418,6 +426,14 @@ export const en: Dict = {
   'dup.exportTitle': 'Download workflow JSON',
   'dup.duplicated': 'Duplicated as draft',
   'dup.failed': 'Duplicate failed',
+
+  'rename.action': 'Rename',
+  'rename.title': 'Rename recipe',
+  'rename.desc': 'Only changes the display name; template identity and linked records stay untouched.',
+  'rename.name': 'Name',
+  'rename.save': 'Save',
+  'rename.saving': 'Saving…',
+  'rename.done': 'Recipe renamed',
 
   'delete.action': 'Delete',
   'delete.confirmTitle': 'Move to trash?',

@@ -80,6 +80,7 @@ export interface WebApi {
   createRecipe(input: { name: string; kind: RecipeKind; tool?: string; prompt?: string; params?: Record<string, unknown> }): Recipe;
   attachWorkflowFile(recipeId: string, blob: Blob, filename: string): Promise<Recipe>;
   duplicateRecipe(recipeId: string, name?: string): Recipe;
+  renameRecipe(recipeId: string, name: string): Recipe;
   exportWorkflow(recipeId: string, opts?: { recordId?: string; prompt?: string; params?: Record<string, unknown> }): { text: string; filename: string } | null;
   /** 移入回收站（软删除），返回实际移动条数 */
   trashRecords(ids: string[]): number;
@@ -278,6 +279,10 @@ export function createWebApi(options: { lib: Library; dataDir: string }): WebApi
       else input = { ...base, kind: 'param-preset', params: recipe.params ?? {} };
       // 副本不带 contentHash：避免入库归并回原件，作为独立草稿演化
       return lib.recipes.create(input);
+    },
+
+    renameRecipe(recipeId, name) {
+      return lib.recipes.rename(recipeId, name);
     },
 
     exportWorkflow(recipeId, opts) {

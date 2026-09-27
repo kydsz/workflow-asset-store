@@ -95,6 +95,66 @@ describe('配方用例：先建后挂 + 导出', () => {
   });
 });
 
+describe('recipes.rename：只改显示名', () => {
+  it('改名生效，模板身份 contentHash 不变', () => {
+    const r = lib.recipes.create({ kind: 'prompt-template', name: '旧名', prompt: 'hello' });
+    const renamed = lib.recipes.rename(r.id, '  新名字  ');
+    expect(renamed.name).toBe('新名字');
+    expect(renamed.id).toBe(r.id);
+    expect(lib.recipes.get(r.id)!.name).toBe('新名字');
+  });
+
+  it('workflow-file 配方改名保留 contentHash', () => {
+    const r = lib.recipes.create({ kind: 'workflow-file', name: '原', contentHash: 'abc123' });
+    expect(lib.recipes.rename(r.id, '重命名后').contentHash).toBe('abc123');
+  });
+
+  it('空白名或缺失配方都拒绝', () => {
+    const r = lib.recipes.create({ kind: 'prompt-template', name: 'x', prompt: 'p' });
+    expect(() => lib.recipes.rename(r.id, '   ')).toThrow(DomainError);
+    expect(() => lib.recipes.rename('nope', '名')).toThrow(DomainError);
+  });
+
+  it('回收站里的配方不可改名', () => {
+    const r = lib.recipes.create({ kind: 'prompt-template', name: 'x', prompt: 'p' });
+    lib.recipes.trash([r.id]);
+    expect(() => lib.recipes.rename(r.id, '名')).toThrow(DomainError);
+  });
+
+  it('改名不影响自动归并：同模板再入库仍命中改名后的配方，不产生第二份', () => {
+    const first = lib.createRecipeWithFile({ name: '原始文件名', tool: 'comfyui', filePath: join(srcDir, 'wf.json') });
+    lib.recipes.rename(first.recipe.id, '我的长城工作流');
+
+    // 换提示词换 seed 仍属同一模板；文件名也不同
+    const bytes = Buffer.from(JSON.stringify({ ...graph, '1': { class_type: 'CLIPTextEncode', inputs: { text: 'another run' } }, '2': { class_type: 'KSampler', inputs: { seed: 7, steps: 20 } } }));
+    const draft = lib.recipes.create({ kind: 'workflow-file', name: '待挂', tool: 'comfyui' });
+    const out = lib.attachWorkflowFile(draft.id, bytes);
+    expect(out.recipe.id).toBe(first.recipe.id);
+    expect(out.recipe.name).toBe('我的长城工作流');
+    expect(lib.recipes.list().filter((r) => r.contentHash === first.recipe.contentHash)).toHaveLength(1);
+  });
+
+  it('改名后再拖入同模板资产：走完整入库管线仍归并到改名后的配方', () => {
+    const first = lib.createRecipeWithFile({ name: '1790407794897_原始导出名', tool: 'comfyui', filePath: join(srcDir, 'wf.json') }).recipe;
+    lib.recipes.rename(first.id, '我的长城工作流');
+
+    const src = join(srcDir, '随手起的名字.json');
+    writeFileSync(src, JSON.stringify({ ...graph, '1': { class_type: 'CLIPTextEncode', inputs: { text: 'new run' } }, '2': { class_type: 'KSampler', inputs: { seed: 99, steps: 20 } } }));
+    const [res] = lib.ingest({ sources: [src] });
+    expect(res!.status).toBe('collected');
+    expect(res!.recipeId).toBe(first.id);
+    expect(lib.recipes.get(first.id)!.name).toBe('我的长城工作流');
+    expect(lib.recipes.list().filter((r) => r.contentHash === first.contentHash)).toHaveLength(1);
+  });
+
+  it('导出文件名跟随新名，非法字符被净化', () => {
+    const r = lib.createRecipeWithFile({ name: '旧名', tool: 'comfyui', filePath: join(srcDir, 'wf.json') }).recipe;
+    lib.recipes.rename(r.id, '  山海关 / 第①版  ' );
+    const out = lib.exportWorkflow(r.id)!;
+    expect(out.filename).toBe('山海关___第_版.json');
+  });
+});
+
 describe('lib.readLibraryFile：数据目录读文件的安全收口', () => {
   it('data 内相对路径可读；越界、绝对路径、db 文件拒绝', () => {
     writeFileSync(join(root, 'data', 'note.txt'), 'hello');

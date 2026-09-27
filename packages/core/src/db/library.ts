@@ -138,6 +138,8 @@ export interface RecipeRepository {
   search(query: RecipeSearchQuery): Recipe[];
   /** 待补录回填：纯收藏配方后续拿到工作流文件时补上 */
   backfill(id: string, patch: { workflowFilePath?: string; contentHash?: string }): Recipe;
+  /** 仅改显示名：模板身份（contentHash）与运行值不受影响 */
+  rename(id: string, name: string): Recipe;
   /** 移入回收站（软删除），返回实际移动条数 */
   trash(ids: string[]): number;
   restore(id: string): Recipe;
@@ -206,6 +208,14 @@ export function createRecipeRepository(db: Db): RecipeRepository {
         .where(eq(recipes.id, id))
         .run();
       return rowToRecipe(updated);
+    },
+    rename(id, name) {
+      const trimmed = name.trim();
+      if (!trimmed) throw new DomainError('配方必须有名称', 'recipe_name_required');
+      const row = db.select().from(recipes).where(and(eq(recipes.id, id), isNull(recipes.deletedAt))).get();
+      if (!row) throw new DomainError(`配方不存在: ${id}`, 'recipe_not_found');
+      db.update(recipes).set({ name: trimmed }).where(eq(recipes.id, id)).run();
+      return rowToRecipe({ ...row, name: trimmed });
     },
     trash(ids) {
       const now = Date.now();

@@ -128,6 +128,21 @@ export async function duplicateRecipeAction(recipeId: string) {
   }
 }
 
+export async function renameRecipeAction(recipeId: string, _prev: unknown, formData: FormData) {
+  const api = getWebApi();
+  const t = await getServerT();
+  const name = String(formData.get('name') ?? '').trim();
+  if (!name) return { error: t('action.errRecipeName') };
+  try {
+    api.renameRecipe(recipeId, name);
+    revalidatePath('/recipes');
+    revalidatePath(`/recipes/${recipeId}`);
+    return { ok: true };
+  } catch (e) {
+    return { error: errorText(t, e) };
+  }
+}
+
 export async function trashRecordsAction(ids: string[]): Promise<ActionResult> {
   const t = await getServerT();
   if (!ids.length) return { error: t('action.errNothingSelected') };

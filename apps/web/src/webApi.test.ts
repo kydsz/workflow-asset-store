@@ -310,6 +310,15 @@ describe('配方复制与导出', () => {
     expect(tplCopy.prompt).toBe('hello');
   });
 
+  it('renameRecipe：改显示名，contentHash 与检索随之更新', async () => {
+    const wf = await recipeWithWorkflow();
+    const renamed = api.renameRecipe(wf.id, '  改名后的工作流  ');
+    expect(renamed.name).toBe('改名后的工作流');
+    expect(renamed.contentHash).toBe(wf.contentHash);
+    expect(api.listRecipes({ q: '改名后' }).map((r) => r.id)).toContain(wf.id);
+    expect(() => api.renameRecipe('nope', '名')).toThrow(/配方不存在/);
+  });
+
   it('exportWorkflow：默认导出模板（无 record 时提示词回填为空、seed 兜底）；带 recordId 注入当次提示词与 seed', async () => {
     const wf = await recipeWithWorkflow();
     const plain = api.exportWorkflow(wf.id);
