@@ -34,7 +34,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           id="was-theme-bootstrap"
           strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('was-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var e=document.documentElement;e.classList.add(t);e.style.colorScheme=t}catch(x){}})()`,
+            __html: `(function(){try{var e=document.documentElement;var t=localStorage.getItem('was-theme')||(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');if(t==='system'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}e.classList.add(t);e.style.colorScheme=t;var c=localStorage.getItem('was-gallery-columns');if(c>=2&&c<=6)e.style.setProperty('--was-gallery-columns',c);var h=localStorage.getItem('was-gallery-thumb-h');if(h!==null&&h!==''){var n=+h;e.style.setProperty('--was-gallery-thumb-h',(n>0?n:(n===0?100000:384))+'px')}}catch(x){}})()`,
           }}
         />
       </head>

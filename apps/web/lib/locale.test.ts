@@ -13,7 +13,8 @@ describe('locale dictionaries', () => {
   });
 
   it('英文未翻时立刻报错（除专有名词外两份值不能相同）', () => {
-    const SAME_OK = new Set(['nav.brand', 'meta.title', 'upload.toolPlaceholder']);
+    // 语言名按惯例在两份字典里都用该语言自身书写，便于跨语言识别
+    const SAME_OK = new Set(['nav.brand', 'meta.title', 'upload.toolPlaceholder', 'settings.lang.zh', 'settings.lang.en']);
     const untranslated = Object.keys(zh).filter((k) => zh[k as TKey] === en[k as TKey] && !SAME_OK.has(k));
     expect(untranslated).toEqual([]);
   });

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { sniffSource } from '@was/core';
 import { getWebApi, type TrashKind } from '../src/webApi';
+import { saveStorageDir } from '../src/storageInfo';
 import { getServerT } from '@/lib/locale-server';
 import { errorText } from '@/lib/locale';
 
@@ -200,4 +201,21 @@ export async function emptyTrashAction(): Promise<ActionResult> {
   } catch (e) {
     return { error: errorText(t, e) };
   }
+}
+
+export interface SaveStorageResult {
+  ok?: boolean;
+  error?: string;
+  /** 保存成功后的待生效目录 */
+  pendingDir?: string;
+  targetHasDb?: boolean;
+}
+
+/** 只写配置文件，不碰任何数据：新目录要重启后才被打开 */
+export async function saveStorageDirAction(input: string): Promise<SaveStorageResult> {
+  const t = await getServerT();
+  const r = saveStorageDir(input);
+  if (!r.ok) return { error: r.detail ? `${t(r.errorKey)}：${r.detail}` : t(r.errorKey) };
+  revalidatePath('/settings');
+  return { ok: true, pendingDir: r.pendingDir, targetHasDb: r.targetHasDb };
 }

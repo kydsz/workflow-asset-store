@@ -40,7 +40,7 @@
 
 ## 数据目录
 
-`ASSET_DATA_DIR`（缺省 `./data`，Web 侧相对 `process.cwd()` 解析）下三样东西：`asset-store.db`（SQLite）、`files/`（copy 模式复制入库的媒体与工作流 JSON，按内容哈希命名）、`uploads/`（入库暂存）。缩略图目录与回收站尚未实现：前端经 `/api/files/**` 直接读原文件，删除功能本身未落地。整目录可拷贝即备份，指到新位置即恢复。
+数据目录按 `ASSET_DATA_DIR` 环境变量 > `was-storage.json` 配置文件 > 缺省 `./data` 解析（`packages/core/src/config/storageDir.ts`，Web 与 MCP 共用；配置文件自 cwd 逐级向上找第一个）。其下三样东西：`asset-store.db`（SQLite）、`files/`（copy 模式复制入库的媒体与工作流 JSON，按内容哈希命名）、`uploads/`（入库暂存）。缩略图目录尚未实现：前端经 `/api/files/**` 直接读原文件。整目录可拷贝即备份，指到新位置即恢复。
 
 ## 批量与归属约定
 

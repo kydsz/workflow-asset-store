@@ -22,7 +22,7 @@ export async function Gallery({ cards }: { cards: RecordCard[] }) {
     );
   }
   return (
-    <div className="columns-2 gap-4 md:columns-3 xl:columns-4 [&>*]:mb-4">
+    <div className="columns-[var(--was-gallery-columns,4)] gap-4 [&>*]:mb-4">
       {cards.map((c) => (
         <div
           key={c.id}
@@ -31,10 +31,10 @@ export async function Gallery({ cards }: { cards: RecordCard[] }) {
           <Link href={c.detailUrl} className="block">
             {c.thumbUrl ? (
               c.mediaType === 'video' ? (
-                <video src={c.thumbUrl} muted playsInline className="max-h-96 w-full bg-black object-cover" />
+                <video src={c.thumbUrl} muted playsInline className="max-h-[var(--was-gallery-thumb-h,384px)] w-full bg-black object-cover" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={c.thumbUrl} alt={c.prompt ?? c.id} loading="lazy" className="max-h-96 w-full bg-black object-cover" />
+                <img src={c.thumbUrl} alt={c.prompt ?? c.id} loading="lazy" className="max-h-[var(--was-gallery-thumb-h,384px)] w-full bg-black object-cover" />
               )
             ) : (
               <div className="flex aspect-video items-center justify-center text-muted-foreground">

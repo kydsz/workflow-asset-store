@@ -31,6 +31,8 @@ data-before-*/
 .env
 .env.*
 !.env.example
+# 设置页写入的数据目录指向（机器相关，不入库）
+was-storage.json
 
 # 测试与缓存
 coverage/

@@ -50,7 +50,7 @@ pnpm build        # core 编译 + next build
 node apps/mcp/dist/server.js   # MCP stdio（先 pnpm build）
 ```
 
-运行时数据（SQLite 库、复制入库的媒体与工作流 JSON、入库暂存文件）全部落在 `ASSET_DATA_DIR`，缺省 `./data`；Web 侧相对 `process.cwd()` 解析，本地开发即 `apps/web/data/`。该目录含真实资产，已被 `.gitignore` 排除，永不入库。备份 = 整目录拷贝，恢复 = 把 `ASSET_DATA_DIR` 指向新位置。
+运行时数据（SQLite 库、复制入库的媒体与工作流 JSON、入库暂存文件）全部落在数据目录，按 `ASSET_DATA_DIR` 环境变量 > `was-storage.json` 配置文件 > 缺省 `./data` 的顺序解析；环境变量相对 `process.cwd()`，配置文件相对自身所在目录，本地开发缺省即 `apps/web/data/`。配置文件由设置页「存储」卡片写入，改地址只影响下一次启动（Web 与 MCP 走同一套解析）。该目录含真实资产，已被 `.gitignore` 排除，永不入库。备份 = 整目录拷贝，恢复 = 把数据目录指向新位置。
 
 改 `packages/core` 后须在包内跑一次 `pnpm build` 重建 `dist/`：vitest 通过 alias 直接读 `src` 会全绿，而 web 与 MCP 运行时加载的是 `dist`。
 

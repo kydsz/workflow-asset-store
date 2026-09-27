@@ -3,6 +3,7 @@ import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import {
   createLibrary,
   DomainError,
+  resolveDataDir,
   type GenerationRecord,
   type IngestExplicit,
   type Library,
@@ -65,6 +66,8 @@ export interface TrashEntry {
 }
 
 export interface WebApi {
+  /** 当前进程实际使用的数据目录（绝对路径） */
+  readonly dataDir: string;
   listRecords(params: SearchQuery): { records: RecordCard[]; total: number };
   getRecord(id: string): GenerationRecord;
   getRecordSafe(id: string): GenerationRecord | null;
@@ -155,6 +158,7 @@ export function createWebApi(options: { lib: Library; dataDir: string }): WebApi
   };
 
   return {
+    dataDir,
     listRecords(params) {
       const records = lib.records.search(params);
       const total = lib.records.search({ ...params, limit: 100_000 }).length;
@@ -378,8 +382,8 @@ let singleton: WebApi | null = null;
 
 export function getWebApi(): WebApi {
   if (!singleton) {
-    // 本地自托管应用：data 目录在运行时解析，无需（也无法）在构建期静态追踪
-    const dataDir = join(/*turbopackIgnore: true*/ process.cwd(), process.env.ASSET_DATA_DIR ?? 'data');
+    // 本地自托管应用：data 目录在运行时解析（环境变量 > was-storage.json > ./data），无需（也无法）在构建期静态追踪
+    const { dataDir } = resolveDataDir();
     const lib = createLibrary({ dataDir });
     singleton = createWebApi({ lib, dataDir: lib.dataDir });
   }

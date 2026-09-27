@@ -150,11 +150,21 @@ export function createLibrary(options: LibraryOptions): Library {
 
 export * from './domain/types.js';
 export {
+  ASSET_DATA_DIR_ENV,
+  DEFAULT_DATA_DIR,
+  STORAGE_CONFIG_FILE,
+  locateConfigFile,
+  readConfiguredDataDir,
+  readStorageConfig,
+  resolveDataDir,
+  writeStorageConfig,
+} from './config/storageDir.js';
+export type { DataDirSource, ResolvedDataDir, StorageConfig } from './config/storageDir.js';
+export {
   DomainError,
   ERROR_CODES,
   createStorage,
-  ingestFiles,
-  extractComfyui,
+  ingestFiles,  extractComfyui,
   sniffSource,
   canonicalJson,
   sha256hex,

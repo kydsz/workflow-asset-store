@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Images, FlaskConical, Inbox, Boxes, Trash2 } from 'lucide-react';
+import { Images, FlaskConical, Inbox, Boxes, Trash2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { UploadDialog } from '@/components/UploadDialog';
@@ -15,6 +15,7 @@ const NAV = [
   { href: '/recipes', label: 'nav.recipes', icon: FlaskConical },
   { href: '/incomplete', label: 'nav.incomplete', icon: Inbox },
   { href: '/trash', label: 'nav.trash', icon: Trash2 },
+  { href: '/settings', label: 'nav.settings', icon: Settings },
 ] as const;
 
 export function AppNav({ recipes, incompleteCount }: { recipes: { id: string; name: string }[]; incompleteCount: number }) {

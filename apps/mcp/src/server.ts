@@ -1,10 +1,11 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
+import { resolveDataDir } from '@was/core';
 import { createTools } from './tools.js';
 
-const ASSET_DATA_DIR = process.env.ASSET_DATA_DIR ?? 'data';
-const tools = createTools({ dataDir: ASSET_DATA_DIR });
+// 与 Web 同一套解析口径（环境变量 > was-storage.json > ./data），否则两个面会指向不同库
+const tools = createTools({ dataDir: resolveDataDir().dataDir });
 
 const server = new McpServer({ name: 'workflow-asset-store', version: '0.0.0' });
 
