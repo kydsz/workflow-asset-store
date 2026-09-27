@@ -13,7 +13,7 @@ describe('locale dictionaries', () => {
   });
 
   it('英文未翻时立刻报错（除专有名词外两份值不能相同）', () => {
-    const SAME_OK = new Set(['nav.brand', 'meta.title', 'upload.toolPlaceholder', 'recipeForm.toolPlaceholder', 'upload.manualToolPlaceholder']);
+    const SAME_OK = new Set(['nav.brand', 'meta.title', 'upload.toolPlaceholder']);
     const untranslated = Object.keys(zh).filter((k) => zh[k as TKey] === en[k as TKey] && !SAME_OK.has(k));
     expect(untranslated).toEqual([]);
   });

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ToolSelect } from '@/components/ToolSelect';
 
 const NONE = '__none__';
 
@@ -24,6 +25,7 @@ export function PatchForm(props: {
 }) {
   const [busy, start] = useTransition();
   const [recipeId, setRecipeId] = useState(props.initial.recipeId ?? NONE);
+  const [tool, setTool] = useState(props.initial.tool);
   const t = useT();
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -43,7 +45,7 @@ export function PatchForm(props: {
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3">
         <div className="grid min-w-0 gap-2">
           <Label htmlFor="pt-tool">{t('common.tool')}</Label>
-          <Input id="pt-tool" name="tool" defaultValue={props.initial.tool} />
+          <ToolSelect id="pt-tool" name="tool" value={tool} onChange={setTool} />
         </div>
         <div className="grid min-w-0 gap-2">
           <Label>{t('common.recipe')}</Label>

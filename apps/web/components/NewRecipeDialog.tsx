@@ -12,11 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { ToolSelect } from '@/components/ToolSelect';
 
 export function NewRecipeDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState('workflow-file');
+  const [tool, setTool] = useState('');
   const [busy, start] = useTransition();
   const t = useT();
 
@@ -72,7 +74,7 @@ export function NewRecipeDialog() {
               <Label htmlFor="rc-tool">
                 {t('recipeForm.tool')} {t('common.optional')}
               </Label>
-              <Input id="rc-tool" name="tool" placeholder={t('recipeForm.toolPlaceholder')} />
+              <ToolSelect id="rc-tool" name="tool" value={tool} onChange={setTool} optional />
             </div>
           </div>
           {kind === 'prompt-template' ? (
