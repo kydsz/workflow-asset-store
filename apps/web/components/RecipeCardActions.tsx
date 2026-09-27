@@ -14,7 +14,7 @@ export function RecipeCardActions({ recipe }: { recipe: { id: string; kind: stri
   const [busy, setBusy] = useState(false);
   const t = useT();
   return (
-    <div className="flex items-center gap-1" onClick={(e) => e.preventDefault()}>
+    <div className="flex items-center gap-1">
       {recipe.kind === 'workflow-file' && recipe.workflowFilePath ? (
         <Button asChild size="xs" variant="ghost" title={t('dup.exportTitle')}>
           <a href={`/api/recipes/${recipe.id}/workflow`} download>
