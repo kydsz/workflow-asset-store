@@ -2,9 +2,18 @@
 
 import { revalidatePath } from 'next/cache';
 import { sniffSource } from '@was/core';
-import { getWebApi } from '../src/webApi';
+import { getWebApi, type TrashKind } from '../src/webApi';
 import { getServerT } from '@/lib/locale-server';
 import { errorText } from '@/lib/locale';
+
+/** 删除/恢复会同时影响列表、详情与侧栏计数：整棵路由树失效 */
+const revalidateLibrary = () => revalidatePath('/', 'layout');
+
+export interface ActionResult {
+  ok?: boolean;
+  count?: number;
+  error?: string;
+}
 
 export async function uploadIngest(formData: FormData) {
   const api = getWebApi();
@@ -114,6 +123,65 @@ export async function duplicateRecipeAction(recipeId: string) {
     const copy = api.duplicateRecipe(recipeId);
     revalidatePath('/recipes');
     return { id: copy.id };
+  } catch (e) {
+    return { error: errorText(t, e) };
+  }
+}
+
+export async function trashRecordsAction(ids: string[]): Promise<ActionResult> {
+  const t = await getServerT();
+  if (!ids.length) return { error: t('action.errNothingSelected') };
+  try {
+    const count = getWebApi().trashRecords(ids);
+    // 移动 0 条说明目标不在库或已在回收站，不能报成功
+    if (count === 0) return { error: t('err.record_not_found') };
+    revalidateLibrary();
+    return { ok: true, count };
+  } catch (e) {
+    return { error: errorText(t, e) };
+  }
+}
+
+export async function trashRecipeAction(recipeId: string): Promise<ActionResult> {
+  const t = await getServerT();
+  try {
+    const count = getWebApi().trashRecipe(recipeId);
+    if (count === 0) return { error: t('err.recipe_not_found') };
+    revalidateLibrary();
+    return { ok: true, count };
+  } catch (e) {
+    return { error: errorText(t, e) };
+  }
+}
+
+export async function restoreTrashAction(kind: TrashKind, id: string): Promise<ActionResult> {
+  const t = await getServerT();
+  try {
+    getWebApi().restoreTrash(kind, id);
+    revalidateLibrary();
+    return { ok: true };
+  } catch (e) {
+    return { error: errorText(t, e) };
+  }
+}
+
+export async function purgeTrashAction(kind: TrashKind, id: string): Promise<ActionResult> {
+  const t = await getServerT();
+  try {
+    getWebApi().purgeTrash(kind, id);
+    revalidateLibrary();
+    return { ok: true };
+  } catch (e) {
+    return { error: errorText(t, e) };
+  }
+}
+
+export async function emptyTrashAction(): Promise<ActionResult> {
+  const t = await getServerT();
+  try {
+    const { records, recipes } = getWebApi().emptyTrash();
+    revalidateLibrary();
+    return { ok: true, count: records + recipes };
   } catch (e) {
     return { error: errorText(t, e) };
   }

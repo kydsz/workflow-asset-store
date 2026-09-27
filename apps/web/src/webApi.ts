@@ -47,6 +47,23 @@ export interface RecipeDetail {
   workflowText: string | null;
 }
 
+/** 回收站条目类型：删除/恢复/彻底删除都按它分派 */
+export type TrashKind = 'record' | 'recipe';
+
+export interface TrashEntry {
+  kind: TrashKind;
+  id: string;
+  /** 记录取提示词，配方取名称 */
+  title: string;
+  tool?: string;
+  createdAt: number;
+  deletedAt: number;
+  artifactCount: number;
+  mediaType?: string;
+  thumbUrl?: string;
+  detailUrl: string;
+}
+
 export interface WebApi {
   listRecords(params: SearchQuery): { records: RecordCard[]; total: number };
   getRecord(id: string): GenerationRecord;
@@ -57,12 +74,22 @@ export interface WebApi {
   ingestUpload(form: FormData): Promise<UploadResult>;
   listRecipes(query?: { kind?: string; tool?: string; q?: string }): Recipe[];
   getRecipe(id: string): Recipe;
+  getRecipeSafe(id: string): Recipe | null;
   getRecipeDetail(id: string): RecipeDetail | null;
   recipeStats(recipeId: string): RecordStats;
   createRecipe(input: { name: string; kind: RecipeKind; tool?: string; prompt?: string; params?: Record<string, unknown> }): Recipe;
   attachWorkflowFile(recipeId: string, blob: Blob, filename: string): Promise<Recipe>;
   duplicateRecipe(recipeId: string, name?: string): Recipe;
   exportWorkflow(recipeId: string, opts?: { recordId?: string; prompt?: string; params?: Record<string, unknown> }): { text: string; filename: string } | null;
+  /** 移入回收站（软删除），返回实际移动条数 */
+  trashRecords(ids: string[]): number;
+  trashRecipe(id: string): number;
+  listTrash(): TrashEntry[];
+  trashCounts(): { records: number; recipes: number };
+  restoreTrash(kind: TrashKind, id: string): GenerationRecord | Recipe;
+  /** 彻底删除：连同只被它引用的库内文件一起回收 */
+  purgeTrash(kind: TrashKind, id: string): void;
+  emptyTrash(): { records: number; recipes: number };
   /** 产物路径 → /api/files URL（data 内为相对路径，data 外保留绝对路径由 resolveFileParam 做登记校验） */
   artifactFileUrl(path: string): string;
   /** /api/files 的 URL 段 → 文件内容：data 内直接读，data 外仅当已登记为产物才放行 */
@@ -121,13 +148,9 @@ export function createWebApi(options: { lib: Library; dataDir: string }): WebApi
 
   /** 外链（reference 模式）产物：仅当路径已登记在某条记录的产物里才放行 */
   const readRegisteredArtifact = (absPath: string) => {
-    for (const rec of lib.records.search({ limit: 100_000 })) {
-      const artifact = rec.artifacts.find((a) => resolve(a.path) === absPath);
-      if (artifact && existsSync(artifact.path) && statSync(artifact.path).isFile()) {
-        return { bytes: readFileSync(artifact.path), contentType: contentTypeOf(artifact.path) };
-      }
-    }
-    return null;
+    if (!lib.records.isArtifactPathUsed(absPath)) return null;
+    if (!existsSync(absPath) || !statSync(absPath).isFile()) return null;
+    return { bytes: readFileSync(absPath), contentType: contentTypeOf(absPath) };
   };
 
   return {
@@ -211,6 +234,10 @@ export function createWebApi(options: { lib: Library; dataDir: string }): WebApi
       return r;
     },
 
+    getRecipeSafe(id) {
+      return lib.recipes.get(id) ?? null;
+    },
+
     getRecipeDetail(id) {
       const recipe = lib.recipes.get(id);
       if (!recipe) return null;
@@ -260,6 +287,63 @@ export function createWebApi(options: { lib: Library; dataDir: string }): WebApi
         prompt: opts?.prompt ?? record?.prompt,
         params: typeof seedRaw === 'number' ? { seed: seedRaw } : undefined,
       });
+    },
+
+    trashRecords(ids) {
+      return lib.records.trash(ids);
+    },
+
+    trashRecipe(id) {
+      return lib.recipes.trash([id]);
+    },
+
+    listTrash() {
+      const entries: TrashEntry[] = [
+        ...lib.records.listTrash().map((r) => ({
+          kind: 'record' as const,
+          id: r.id,
+          title: r.prompt ?? r.note ?? r.id.slice(0, 8),
+          tool: r.tool,
+          createdAt: r.createdAt,
+          deletedAt: r.deletedAt ?? 0,
+          artifactCount: r.artifacts.length,
+          mediaType: r.artifacts[0]?.mediaType,
+          thumbUrl: r.artifacts[0] && isPreviewable(r.artifacts[0].path) ? fileUrl(r.artifacts[0].path) : undefined,
+          detailUrl: `/records/${r.id}`,
+        })),
+        ...lib.recipes.listTrash().map((r) => ({
+          kind: 'recipe' as const,
+          id: r.id,
+          title: r.name,
+          tool: r.tool,
+          createdAt: r.createdAt,
+          deletedAt: r.deletedAt ?? 0,
+          artifactCount: 0,
+          detailUrl: `/recipes/${r.id}`,
+        })),
+      ];
+      return entries.sort((a, b) => b.deletedAt - a.deletedAt);
+    },
+
+    trashCounts() {
+      return { records: lib.records.countTrash(), recipes: lib.recipes.countTrash() };
+    },
+
+    restoreTrash(kind, id) {
+      return kind === 'recipe' ? lib.recipes.restore(id) : lib.records.restore(id);
+    },
+
+    purgeTrash(kind, id) {
+      if (kind === 'recipe') lib.purgeRecipe(id);
+      else lib.purgeRecord(id);
+    },
+
+    emptyTrash() {
+      const records = lib.records.listTrash().length;
+      const recipes = lib.recipes.listTrash().length;
+      for (const r of lib.records.listTrash()) lib.purgeRecord(r.id);
+      for (const r of lib.recipes.listTrash()) lib.purgeRecipe(r.id);
+      return { records, recipes };
     },
 
     artifactFileUrl: fileUrl,

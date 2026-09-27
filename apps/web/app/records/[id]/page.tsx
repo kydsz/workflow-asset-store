@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { PurgeButton, RestoreButton, TrashButton } from '@/components/TrashButtons';
 import { isPreviewable } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
@@ -27,16 +28,39 @@ export default async function RecordDetail(props: { params: Promise<{ id: string
   const api = getWebApi();
   const rec = api.getRecordSafe(id);
   if (!rec) notFound();
-  const recipe = rec.recipeId ? api.getRecipe(rec.recipeId) : undefined;
+  // 配方可被彻底删除而记录仍在：用 safe 取，避免详情页 500
+  const recipe = rec.recipeId ? api.getRecipeSafe(rec.recipeId) : undefined;
   const needs = rec.needsManual ?? [];
   const primary = rec.artifacts[0];
   const recipes = api.listRecipes().map((r) => ({ id: r.id, name: r.name }));
 
   return (
     <div className="space-y-4">
-      <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
-        ← {t('record.back')}
-      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
+          ← {t('record.back')}
+        </Link>
+        <span className="ml-auto">
+          {rec.deletedAt ? (
+            <span className="flex items-center gap-2">
+              <RestoreButton kind="record" id={rec.id} redirectTo="/" />
+              <PurgeButton kind="record" id={rec.id} redirectTo="/" variant="destructive" />
+            </span>
+          ) : (
+            <TrashButton kind="record" id={rec.id} redirectTo="/" variant="destructive" />
+          )}
+        </span>
+      </div>
+
+      {rec.deletedAt ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm">
+          <Badge variant="outline" className="border-destructive/40 text-destructive">
+            {t('nav.trash')}
+          </Badge>
+          <span className="text-muted-foreground">{t('trash.bannerRecord')}</span>
+          <span className="text-xs text-muted-foreground">{t('trash.deletedAt', t.time(rec.deletedAt))}</span>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         {/* 左：媒体 */}
@@ -106,7 +130,10 @@ export default async function RecordDetail(props: { params: Promise<{ id: string
                     <Link href={`/recipes/${recipe.id}`} className="min-w-0 truncate underline underline-offset-2">
                       {recipe.name}
                     </Link>
+                    {recipe.deletedAt ? <span className="text-destructive">· {t('nav.trash')}</span> : null}
                   </Badge>
+                ) : rec.recipeId ? (
+                  <Badge variant="ghost">{t('trash.recipeGone')}</Badge>
                 ) : (
                   <Badge variant="ghost">{t('record.noRecipe')}</Badge>
                 )}

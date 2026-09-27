@@ -28,10 +28,15 @@ export type NewRecipe = RecipeFields &
     | { kind: 'param-preset'; params: Record<string, unknown>; workflowFilePath?: undefined; prompt?: undefined; contentHash?: undefined }
   );
 
-export type Recipe = { id: string; kind: RecipeKind; name: string; owner: string; createdAt: number } & Omit<
-  NewRecipe,
-  'owner'
->;
+export type Recipe = {
+  id: string;
+  kind: RecipeKind;
+  name: string;
+  owner: string;
+  createdAt: number;
+  /** 非空即在回收站中（软删除）；彻底删除时置为 null 并清行 */
+  deletedAt?: number | undefined;
+} & Omit<NewRecipe, 'owner'>;
 
 /** 待补录原因码：界面按 code 取词，reason 字段是人类可读兜底 */
 export type NeedsManualCode =
@@ -78,6 +83,8 @@ export interface GenerationRecord extends GenerationRecordFields {
   artifacts: Artifact[];
   owner: string;
   createdAt: number;
+  /** 非空即在回收站中；检索、统计、配方历史等口径一律排除 */
+  deletedAt?: number | undefined;
 }
 
 export interface SearchQuery {

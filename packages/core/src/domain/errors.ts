@@ -6,6 +6,7 @@ export type ErrorCode =
   | 'recipe_content_missing'
   | 'recipe_not_found'
   | 'recipe_template_conflict'
+  | 'recipe_restore_conflict'
   | 'record_tool_required'
   | 'record_artifacts_required'
   | 'artifact_path_required'
@@ -23,6 +24,7 @@ export const ERROR_CODES: ErrorCode[] = [
   'recipe_content_missing',
   'recipe_not_found',
   'recipe_template_conflict',
+  'recipe_restore_conflict',
   'record_tool_required',
   'record_artifacts_required',
   'artifact_path_required',

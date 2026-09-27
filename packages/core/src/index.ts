@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, resolve, sep } from 'node:path';
 import { DomainError, ERROR_CODES } from './domain/errors.js';
 import { openDb, createRecipeRepository, createRecordRepository, type RecipeRepository, type RecordRepository } from './db/library.js';
@@ -35,6 +35,10 @@ export interface Library {
   exportWorkflow(recipeId: string, run?: { prompt?: string; params?: Record<string, unknown> }): { text: string; filename: string } | null;
   /** 数据目录内安全读取：越界、绝对路径越权、db 文件一律 null */
   readLibraryFile(relPath: string): { bytes: Buffer; contentType: string } | null;
+  /** 彻底删除记录：删行并回收只被它引用的 copy 模式产物文件（外链原文件不动） */
+  purgeRecord(id: string): void;
+  /** 彻底删除配方：删行（引用它的记录 recipe_id 置空）并回收独占的工作流文件 */
+  purgeRecipe(id: string): void;
   close(): void;
 }
 
@@ -69,6 +73,17 @@ export function createLibrary(options: LibraryOptions): Library {
   const dbFile = join(dataDir, DB_NAME);
 
   const insideData = (abs: string) => abs.startsWith(dataDir + sep);
+
+  /** 只删数据目录内的普通文件；越界或已不存在都静默跳过 */
+  const removeLibraryFile = (p: string) => {
+    const abs = resolve(p);
+    if (!insideData(abs) || abs === dbFile) return;
+    try {
+      if (statSync(abs).isFile()) unlinkSync(abs);
+    } catch {
+      /* 文件已被外部移走 */
+    }
+  };
 
   return {
     recipes,
@@ -111,6 +126,23 @@ export function createLibrary(options: LibraryOptions): Library {
       if (!insideData(abs) || abs === dbFile) return null;
       if (!existsSync(abs) || !statSync(abs).isFile()) return null;
       return { bytes: readFileSync(abs), contentType: contentTypeOf(abs) };
+    },
+    purgeRecord(id) {
+      const rec = records.get(id);
+      if (!rec) throw new DomainError(`生成记录不存在: ${id}`, 'record_not_found');
+      // 先记住文件再删行：只有 copy 模式（库内副本）归库清理，外链原文件不动
+      const copies = rec.artifacts.filter((a) => a.storageMode === 'copy').map((a) => a.path);
+      records.purge(id);
+      for (const p of copies) if (!records.isArtifactPathUsed(p) && !recipes.isWorkflowPathUsed(p)) removeLibraryFile(p);
+    },
+    purgeRecipe(id) {
+      const recipe = recipes.get(id);
+      if (!recipe) throw new DomainError(`配方不存在: ${id}`, 'recipe_not_found');
+      const workflowFile = recipe.kind === 'workflow-file' ? recipe.workflowFilePath : undefined;
+      recipes.purge(id);
+      if (workflowFile && !recipes.isWorkflowPathUsed(workflowFile, id) && !records.isWorkflowPathUsed(workflowFile)) {
+        removeLibraryFile(workflowFile);
+      }
     },
     close: () => sqlite.close(),
   };

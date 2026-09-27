@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { AttachWorkflowForm } from '@/components/AttachWorkflowForm';
 import { DuplicateRecipeButton } from '@/components/DuplicateRecipeButton';
+import { PurgeButton, RestoreButton, TrashButton } from '@/components/TrashButtons';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +58,16 @@ export default async function RecipeDetail(props: { params: Promise<{ id: string
         <ArrowLeft className="size-3.5" /> {t('recipe.back')}
       </Link>
 
+      {recipe.deletedAt ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm">
+          <Badge variant="outline" className="border-destructive/40 text-destructive">
+            {t('nav.trash')}
+          </Badge>
+          <span className="text-muted-foreground">{t('trash.bannerRecipe')}</span>
+          <span className="text-xs text-muted-foreground">{t('trash.deletedAt', t.time(recipe.deletedAt))}</span>
+        </div>
+      ) : null}
+
       <div className="mb-6 flex flex-wrap items-center gap-3">
         <h1 className="min-w-0 text-xl font-semibold tracking-tight [overflow-wrap:anywhere]">{recipe.name}</h1>
         <Badge variant="secondary">{kindLabel(recipe.kind)}</Badge>
@@ -65,14 +76,24 @@ export default async function RecipeDetail(props: { params: Promise<{ id: string
         </Badge>
         {awaitingFile ? <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15 dark:text-amber-400">{t('recipe.awaitingFileBadge')}</Badge> : null}
         <span className="ml-auto flex items-center gap-2">
-          <DuplicateRecipeButton recipeId={recipe.id} />
-          {workflow ? (
-            <Button asChild variant="outline" size="sm">
-              <a href={`/api/recipes/${recipe.id}/workflow`}>
-                <Download data-icon="inline-start" /> {t('recipe.downloadWorkflow')}
-              </a>
-            </Button>
-          ) : null}
+          {recipe.deletedAt ? (
+            <>
+              <RestoreButton kind="recipe" id={recipe.id} redirectTo="/recipes" />
+              <PurgeButton kind="recipe" id={recipe.id} redirectTo="/recipes" variant="destructive" />
+            </>
+          ) : (
+            <>
+              <DuplicateRecipeButton recipeId={recipe.id} />
+              {workflow ? (
+                <Button asChild variant="outline" size="sm">
+                  <a href={`/api/recipes/${recipe.id}/workflow`}>
+                    <Download data-icon="inline-start" /> {t('recipe.downloadWorkflow')}
+                  </a>
+                </Button>
+              ) : null}
+              <TrashButton kind="recipe" id={recipe.id} redirectTo="/recipes" variant="destructive" />
+            </>
+          )}
         </span>
       </div>
 

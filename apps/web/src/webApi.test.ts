@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createLibrary, type Library } from '@was/core';
@@ -358,5 +358,81 @@ describe('配方复制与导出', () => {
     const parsed = JSON.parse(filled.text);
     expect(parsed.nodes[0].widgets_values[0]).toBe('new text');
     expect(parsed.nodes[1].widgets_values[0]).toBe(99);
+  });
+});
+
+describe('回收站', () => {
+  async function ingestOne(tag: string) {
+    const form = new FormData();
+    form.append('files', new Blob([new Uint8Array(comfyPng(tag))], { type: 'image/png' }), `${tag}.png`);
+    const r = await api.ingestUpload(form);
+    return { id: r.record_ids[0]!, recipeId: lib.records.get(r.record_ids[0]!)!.recipeId! };
+  }
+
+  it('删除记录：从列表消失、进回收站并带缩略图与删除时间', async () => {
+    const { id } = await ingestOne('px-trash-1');
+    expect(await api.trashRecords([id])).toBe(1);
+    expect((await api.listRecords({})).records.map((c) => c.id)).not.toContain(id);
+    const entry = api.listTrash().find((e) => e.id === id)!;
+    expect(entry).toMatchObject({ kind: 'record', detailUrl: `/records/${id}` });
+    expect(entry.title).toContain('px-trash-1');
+    expect(entry.thumbUrl).toContain('/api/files/');
+    expect(entry.mediaType).toBe('image');
+    expect(entry.deletedAt).toBeTypeOf('number');
+    expect(api.trashCounts()).toMatchObject({ records: 1, recipes: 0 });
+  });
+
+  it('删除配方：列表不再出现，详情仍可读并标出回收站状态', async () => {
+    const { recipeId } = await ingestOne('px-trash-2');
+    expect(api.trashRecipe(recipeId)).toBe(1);
+    expect(api.listRecipes().map((r) => r.id)).not.toContain(recipeId);
+    expect(api.getRecipe(recipeId).deletedAt).toBeTypeOf('number');
+    expect(api.getRecipeSafe(recipeId)?.id).toBe(recipeId);
+    expect(api.getRecipeSafe('ghost')).toBeNull();
+    // 卡片上的配方名不再展示，但记录的关联关系保留
+    const card = (await api.listRecords({})).records[0]!;
+    expect(card.recipeId).toBe(recipeId);
+    expect(card.recipeName).toBeUndefined();
+    expect(api.listTrash().some((e) => e.kind === 'recipe' && e.id === recipeId)).toBe(true);
+  });
+
+  it('恢复：条目回到库中且回收站清空', async () => {
+    const { id, recipeId } = await ingestOne('px-trash-3');
+    api.trashRecords([id]);
+    api.trashRecipe(recipeId);
+    expect(api.restoreTrash('record', id).deletedAt).toBeUndefined();
+    expect(api.restoreTrash('recipe', recipeId).deletedAt).toBeUndefined();
+    expect((await api.listRecords({})).total).toBe(1);
+    expect(api.listRecipes().map((r) => r.id)).toContain(recipeId);
+    expect(api.listTrash()).toHaveLength(0);
+  });
+
+  it('彻底删除：记录连库内产物文件一起清掉，配方文件同样回收', async () => {
+    const { id, recipeId } = await ingestOne('px-trash-4');
+    const artifactPath = lib.records.get(id)!.artifacts[0]!.path;
+    const workflowPath = lib.recipes.get(recipeId)!.workflowFilePath!;
+    expect(existsSync(artifactPath)).toBe(true);
+    expect(existsSync(workflowPath)).toBe(true);
+
+    api.purgeTrash('record', id);
+    api.purgeTrash('recipe', recipeId);
+    expect(lib.records.get(id)).toBeUndefined();
+    expect(existsSync(artifactPath)).toBe(false);
+    expect(existsSync(workflowPath)).toBe(false);
+  });
+
+  it('清空回收站：逐条彻底删除并返回条数', async () => {
+    const a = await ingestOne('px-trash-5');
+    const b = await ingestOne('px-trash-6');
+    api.trashRecords([a.id, b.id]);
+    expect(api.listTrash()).toHaveLength(2);
+    expect(api.emptyTrash()).toEqual({ records: 2, recipes: 0 });
+    expect(api.listTrash()).toHaveLength(0);
+    expect((await api.listRecords({})).total).toBe(0);
+  });
+
+  it('未知条目：恢复与彻底删除都抛错', () => {
+    expect(() => api.restoreTrash('record', 'ghost')).toThrow(/不存在/);
+    expect(() => api.purgeTrash('recipe', 'ghost')).toThrow(/不存在/);
   });
 });

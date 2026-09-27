@@ -12,6 +12,7 @@ export const recipes = sqliteTable('recipes', {
   contentHash: text('content_hash'),
   owner: text('owner').notNull().default('local'),
   createdAt: real('created_at').notNull(),
+  deletedAt: real('deleted_at'),
 });
 
 export const generationRecords = sqliteTable('generation_records', {
@@ -27,6 +28,7 @@ export const generationRecords = sqliteTable('generation_records', {
   ingestSource: text('ingest_source'),
   owner: text('owner').notNull().default('local'),
   createdAt: real('created_at').notNull(),
+  deletedAt: real('deleted_at'),
 });
 
 export const artifacts = sqliteTable('artifacts', {

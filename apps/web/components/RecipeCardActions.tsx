@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { duplicateRecipeAction } from '@/app/actions';
 import { useT } from '@/components/locale-provider';
 import { Button } from '@/components/ui/button';
+import { TrashButton } from '@/components/TrashButtons';
 
 export function RecipeCardActions({ recipe }: { recipe: { id: string; kind: string; workflowFilePath?: string | null } }) {
   const router = useRouter();
@@ -40,6 +41,7 @@ export function RecipeCardActions({ recipe }: { recipe: { id: string; kind: stri
         <CopyPlus data-icon="inline-start" />
         {t('dup.copy')}
       </Button>
+      <TrashButton kind="recipe" id={recipe.id} size="xs" variant="ghost" />
     </div>
   );
 }
